@@ -1,2527 +1,652 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>V9 — Documento Completo Definitivo</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background-color: #f5f5f5;
-            padding: 20px;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background-color: white;
-            padding: 40px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            border-radius: 8px;
-        }
-        
-        h1 {
-            color: #2c3e50;
-            border-bottom: 3px solid #3498db;
-            padding-bottom: 10px;
-            margin-bottom: 30px;
-            font-size: 2.5em;
-        }
-        
-        h2 {
-            color: #34495e;
-            margin-top: 40px;
-            margin-bottom: 20px;
-            font-size: 1.8em;
-            border-left: 5px solid #3498db;
-            padding-left: 15px;
-        }
-        
-        h3 {
-            color: #555;
-            margin-top: 25px;
-            margin-bottom: 15px;
-            font-size: 1.3em;
-            background-color: #ecf0f1;
-            padding: 10px 15px;
-            border-radius: 5px;
-        }
-        
-        ul {
-            margin: 15px 0;
-            padding-left: 30px;
-        }
-        
-        li {
-            margin: 8px 0;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        
-        th {
-            background-color: #3498db;
-            color: white;
-            padding: 12px;
-            text-align: left;
-            font-weight: 600;
-            border: 1px solid #2980b9;
-        }
-        
-        td {
-            padding: 10px 12px;
-            border: 1px solid #ddd;
-        }
-        
-        tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-        
-        tr:hover {
-            background-color: #f0f8ff;
-        }
-        
-        input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
-            cursor: pointer;
-        }
-        
-        .totale {
-            background-color: #e8f5e9;
-            padding: 15px;
-            margin: 20px 0;
-            border-left: 4px solid #4caf50;
-            border-radius: 4px;
-        }
-        
-        .totale strong {
-            color: #2e7d32;
-        }
-        
-        @media (max-width: 768px) {
-            .container {
-                padding: 20px;
-            }
-            
-            h1 {
-                font-size: 1.8em;
-            }
-            
-            h2 {
-                font-size: 1.4em;
-            }
-            
-            table {
-                font-size: 0.9em;
-            }
-            
-            th, td {
-                padding: 8px 6px;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Massa">
+<meta name="theme-color" content="#0f1115">
+<title>Piano Massa</title>
+<style>
+  :root{
+    --bg:#0f1115; --surface:#171a21; --surface2:#1e2230; --line:#2a2f3d;
+    --ink:#f2f4f8; --muted:#8b93a7; --faint:#5b6478;
+    --accent:#e8ff3a;          /* lime segnale: l'unico colore acceso */
+    --accent-dim:#c9dd2e;
+    --good:#4ade80; --warn:#fbbf24;
+    --proteine:#ff8a5b; --carbo:#5b9dff; --grassi:#f7d154;
+    --r:16px; --r-sm:11px;
+    --safe-t:env(safe-area-inset-top); --safe-b:env(safe-area-inset-bottom);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;overscroll-behavior-y:none;}
+  body{padding-bottom:calc(82px + var(--safe-b));}
+  .num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum";}
+  /* ---------- Header ---------- */
+  header{position:sticky;top:0;z-index:30;background:rgba(15,17,21,.82);
+    backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+    border-bottom:1px solid var(--line);padding:calc(var(--safe-t) + 14px) 20px 14px;}
+  .h-row{display:flex;align-items:baseline;justify-content:space-between;}
+  .h-title{font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:600;}
+  .h-date{font-size:12px;color:var(--faint);font-variant-numeric:tabular-nums;}
+  .h-main{margin-top:6px;font-size:26px;font-weight:800;letter-spacing:-.02em;}
+  .h-main .lime{color:var(--accent);}
+  /* ---------- Views ---------- */
+  main{padding:20px 16px 8px;max-width:560px;margin:0 auto;}
+  .view{display:none;animation:fade .25s ease;}
+  .view.active{display:block;}
+  @keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+  .section-label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);
+    font-weight:700;margin:22px 4px 10px;}
+  .section-label:first-child{margin-top:4px;}
+  /* ---------- Cards ---------- */
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+    padding:16px;margin-bottom:12px;}
+  .card-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+  /* ---------- Ring (dashboard) ---------- */
+  .rings{display:flex;gap:14px;align-items:center;}
+  .ring-wrap{position:relative;width:120px;height:120px;flex-shrink:0;}
+  .ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .ring-pct{font-size:26px;font-weight:800;letter-spacing:-.02em;line-height:1;}
+  .ring-cap{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-top:3px;}
+  .macro-list{flex:1;display:flex;flex-direction:column;gap:11px;}
+  .macro{}
+  .macro-top{display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;}
+  .macro-top b{font-weight:700;}
+  .macro-top span{color:var(--muted);font-variant-numeric:tabular-nums;}
+  .bar{height:7px;background:var(--surface2);border-radius:99px;overflow:hidden;}
+  .bar>i{display:block;height:100%;border-radius:99px;transition:width .4s cubic-bezier(.4,0,.2,1);}
+  /* ---------- Quick add chips ---------- */
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;}
+  .chip{background:var(--surface2);border:1px solid var(--line);color:var(--ink);
+    padding:9px 13px;border-radius:99px;font-size:13px;font-weight:600;display:flex;gap:7px;align-items:center;
+    transition:transform .12s,background .15s;cursor:pointer;}
+  .chip:active{transform:scale(.94);background:#262b3a;}
+  .chip .k{color:var(--muted);font-size:11px;font-variant-numeric:tabular-nums;}
+  /* ---------- Meal checklist ---------- */
+  .meal{display:flex;align-items:flex-start;gap:13px;padding:13px 0;border-bottom:1px solid var(--line);}
+  .meal:last-child{border-bottom:none;}
+  .check{width:26px;height:26px;border-radius:8px;border:2px solid var(--line);flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;margin-top:1px;transition:all .15s;cursor:pointer;}
+  .check.on{background:var(--accent);border-color:var(--accent);}
+  .check.on svg{stroke:#0f1115;}
+  .check svg{width:15px;height:15px;stroke:transparent;stroke-width:3.5;fill:none;}
+  .meal-body{flex:1;}
+  .meal-name{font-size:15px;font-weight:600;}
+  .meal-name.done{color:var(--faint);text-decoration:line-through;}
+  .meal-desc{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.45;}
+  .meal-kcal{font-size:12px;color:var(--faint);font-variant-numeric:tabular-nums;margin-top:4px;}
+  /* ---------- Workout ---------- */
+  .day-tabs{display:flex;gap:8px;margin-bottom:14px;}
+  .day-tab{flex:1;text-align:center;padding:11px 0;border-radius:var(--r-sm);background:var(--surface);
+    border:1px solid var(--line);font-size:13px;font-weight:700;color:var(--muted);transition:all .15s;cursor:pointer;}
+  .day-tab.active{background:var(--accent);color:#0f1115;border-color:var(--accent);}
+  .ex{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);margin-bottom:10px;overflow:hidden;}
+  .ex-hd{padding:14px 16px;display:flex;align-items:center;gap:13px;cursor:pointer;}
+  .ex-check{width:24px;height:24px;border-radius:7px;border:2px solid var(--line);flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;transition:all .15s;}
+  .ex-check.on{background:var(--good);border-color:var(--good);}
+  .ex-check.on svg{stroke:#0f1115;}
+  .ex-check svg{width:13px;height:13px;stroke:transparent;stroke-width:3.5;fill:none;}
+  .ex-info{flex:1;}
+  .ex-name{font-size:15px;font-weight:600;line-height:1.25;}
+  .ex-name.done{color:var(--faint);}
+  .ex-meta{font-size:12px;color:var(--muted);margin-top:3px;font-variant-numeric:tabular-nums;}
+  .ex-toggle{color:var(--faint);font-size:20px;transition:transform .2s;flex-shrink:0;}
+  .ex.open .ex-toggle{transform:rotate(45deg);}
+  .ex-detail{max-height:0;overflow:hidden;transition:max-height .28s ease;}
+  .ex.open .ex-detail{max-height:340px;}
+  .ex-detail-in{padding:0 16px 16px;}
+  .ex-note{font-size:13px;color:var(--muted);line-height:1.5;padding:2px 0 14px;border-top:1px solid var(--line);margin-top:2px;padding-top:13px;}
+  .logger{display:flex;gap:8px;align-items:center;}
+  .log-field{flex:1;}
+  .log-field label{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--faint);display:block;margin-bottom:5px;}
+  .log-field input{width:100%;background:var(--surface2);border:1px solid var(--line);border-radius:9px;
+    color:var(--ink);padding:11px 8px;font-size:16px;text-align:center;font-variant-numeric:tabular-nums;font-weight:600;}
+  .log-field input:focus{outline:none;border-color:var(--accent);}
+  .last-time{font-size:11px;color:var(--faint);margin-top:9px;text-align:center;font-variant-numeric:tabular-nums;}
+  .last-time b{color:var(--accent-dim);}
+  /* ---------- Weight ---------- */
+  .big-stat{display:flex;align-items:baseline;gap:8px;}
+  .big-stat .v{font-size:42px;font-weight:800;letter-spacing:-.03em;line-height:1;}
+  .big-stat .u{font-size:16px;color:var(--muted);font-weight:600;}
+  .trend{font-size:13px;margin-top:8px;font-variant-numeric:tabular-nums;}
+  .trend.up{color:var(--good);} .trend.down{color:var(--warn);} .trend.flat{color:var(--muted);}
+  .chart{margin-top:16px;width:100%;height:150px;}
+  .chart text{fill:var(--faint);font-size:9px;}
+  .add-weight{display:flex;gap:8px;margin-top:14px;}
+  .add-weight input{flex:1;background:var(--surface2);border:1px solid var(--line);border-radius:11px;
+    color:var(--ink);padding:13px;font-size:16px;text-align:center;font-variant-numeric:tabular-nums;font-weight:600;}
+  .add-weight input:focus{outline:none;border-color:var(--accent);}
+  .btn{background:var(--accent);color:#0f1115;border:none;border-radius:11px;padding:0 20px;
+    font-size:15px;font-weight:700;cursor:pointer;transition:transform .12s;}
+  .btn:active{transform:scale(.95);}
+  .btn-ghost{background:var(--surface2);color:var(--ink);border:1px solid var(--line);}
+  .wlog{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line);font-size:14px;}
+  .wlog:last-child{border-bottom:none;}
+  .wlog .d{color:var(--muted);font-variant-numeric:tabular-nums;}
+  .wlog .w{font-weight:700;font-variant-numeric:tabular-nums;}
+  .wlog button{background:none;border:none;color:var(--faint);font-size:18px;cursor:pointer;padding:0 4px;}
+  /* ---------- Misc ---------- */
+  .reset-day{width:100%;background:var(--surface2);border:1px solid var(--line);color:var(--muted);
+    padding:13px;border-radius:var(--r-sm);font-size:13px;font-weight:600;margin-top:4px;cursor:pointer;}
+  .reset-day:active{background:#262b3a;}
+  .empty{text-align:center;color:var(--faint);font-size:13px;padding:24px 12px;line-height:1.5;}
+  .tip{background:var(--surface2);border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:var(--r-sm);padding:13px 14px;font-size:13px;color:var(--muted);line-height:1.55;margin-bottom:12px;}
+  .tip b{color:var(--ink);}
+  .data-row{display:flex;gap:10px;margin-top:8px;}
+  .data-row button{flex:1;padding:13px;border-radius:var(--r-sm);font-size:13px;font-weight:600;cursor:pointer;
+    background:var(--surface2);border:1px solid var(--line);color:var(--ink);}
+  .data-row button:active{background:#262b3a;}
+  /* ---------- Tab bar ---------- */
+  nav{position:fixed;bottom:0;left:0;right:0;z-index:40;background:rgba(15,17,21,.9);
+    backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--line);
+    display:flex;padding:8px 6px calc(8px + var(--safe-b));}
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;
+    color:var(--faint);cursor:pointer;transition:color .15s;}
+  .tab.active{color:var(--accent);}
+  .tab svg{width:23px;height:23px;stroke:currentColor;stroke-width:2;fill:none;}
+  .tab span{font-size:10px;font-weight:600;letter-spacing:.02em;}
+  .toast{position:fixed;bottom:calc(96px + var(--safe-b));left:50%;transform:translateX(-50%) translateY(20px);
+    background:var(--accent);color:#0f1115;padding:11px 20px;border-radius:99px;font-size:14px;font-weight:700;
+    opacity:0;pointer-events:none;transition:all .3s;z-index:50;white-space:nowrap;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
 </head>
 <body>
-    <div class="container">
-        <h1>V9 — DOCUMENTO COMPLETO DEFINITIVO</h1>
-        
-        <h2>Obiettivo</h2>
-        <ul>
-            <li>Ricomposizione corporea.</li>
-            <li>Aumento graduale della massa muscolare.</li>
-            <li>Target di peso: circa 90 kg.</li>
-            <li>Contesto: allenamento domestico al mattino.</li>
-            <li>Attrezzatura: push-up board + corpo libero.</li>
-            <li>Preferenze alimentari: no cavolo, no ceci.</li>
-            <li>Preferenze di consistenza della dieta: basso volume, alta densità calorica e nutrizionale.</li>
-        </ul>
-        
-        <h2>Dati base</h2>
-        <ul>
-            <li>Peso attuale: 76.95 kg.</li>
-            <li>Altezza: 1.93 m.</li>
-            <li>Peso ideale stimato da bilancia: 81.9 kg.</li>
-            <li>Massa magra: 66.5 kg.</li>
-            <li>Percentuale di grasso: 13.5%.</li>
-            <li>Massa grassa: 10.4 kg.</li>
-            <li>Massa muscolare: 61.9 kg.</li>
-            <li>Massa muscolare scheletrica: 37.6 kg.</li>
-            <li>IMC: 20.6.</li>
-            <li>Metabolismo basale: 1806 kcal.</li>
-            <li>Apporto calorico consigliato dalla bilancia: 2347 kcal.</li>
-        </ul>
-        
-        <h2>Regole globali della dieta</h2>
-        <ul>
-            <li>La dieta è settimanale e varia giorno per giorno.</li>
-            <li>La dieta deve includere varianti di colazione, spuntino, pranzo, pre-workout, spuntino pomeridiano e cena.</li>
-            <li>Ogni pasto deve riportare orario, alimento, quantità, kcal, proteine, carboidrati, grassi.</li>
-            <li>La dieta deve restare dentro il fabbisogno per ricomposizione con tendenza al surplus controllato.</li>
-            <li>L'obiettivo pratico è evitare pasti troppo voluminosi e distribuire le calorie in modo più efficiente.</li>
-            <li>La dieta deve privilegiare alimenti a alta densità energetica e nutrizionale.</li>
-            <li>Devono comparire alimenti semplici da supermercato e anche alimenti più specifici se utili.</li>
-            <li>Devono essere presenti creatina, whey e barrette proteiche.</li>
-            <li>Devono essere presenti quantità esatte e valori nutrizionali per ogni singolo alimento.</li>
-        </ul>
-        
-        <h2>Regole anti-sazietà</h2>
-        <ul>
-            <li>Non usare colazioni gigantesche che ti bloccano fame e digestione.</li>
-            <li>Inserire shake liquidi quando serve per aumentare kcal senza aumentare troppo il volume.</li>
-            <li>Usare olio EVO, frutta secca, burro di arachidi, yogurt greco, banana, pane, riso, pasta, tacchino, pollo, salmone, tonno.</li>
-            <li>Evitare cavolo e ceci.</li>
-            <li>Evitare pasti che saturino troppo e impediscano gli spuntini successivi.</li>
-            <li>Le calorie possono essere distribuite in modo differente tra i pasti, ma il totale giornaliero deve restare coerente con il target.</li>
-        </ul>
-        
-        <h2>Orari standard</h2>
-        <ul>
-            <li>Sveglia: tra 06:00 e 07:30.</li>
-            <li>Allenamento: mattino.</li>
-            <li>Colazione post-workout: entro breve dal termine dell'allenamento nei giorni di training.</li>
-            <li>Pranzo: metà giornata.</li>
-            <li>Cena: sera.</li>
-        </ul>
-        
-        <h2>Macro target</h2>
-        <ul>
-            <li>Giorni di allenamento: circa 2900 kcal.</li>
-            <li>Giorni di recupero: circa 2600 kcal.</li>
-            <li>Proteine: circa 170 g al giorno.</li>
-            <li>Grassi: circa 85–95 g al giorno.</li>
-            <li>Carboidrati: resto delle kcal.</li>
-        </ul>
-        
-        <h2>Struttura della dieta settimanale</h2>
-        <ul>
-            <li>Lunedì: allenamento.</li>
-            <li>Martedì: recupero.</li>
-            <li>Mercoledì: allenamento.</li>
-            <li>Giovedì: recupero.</li>
-            <li>Venerdì: allenamento.</li>
-            <li>Sabato: allenamento.</li>
-            <li>Domenica: recupero.</li>
-        </ul>
-        
-        <h2>Lunedì — Allenamento</h2>
-        
-        <h3>06:30 Pre-workout</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Alimento</th>
-                    <th>Quantità</th>
-                    <th>Kcal</th>
-                    <th>Proteine</th>
-                    <th>Carboidrati</th>
-                    <th>Grassi</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Caffè</td>
-                    <td>1 tazza</td>
-                    <td>5</td>
-                    <td>0</td>
-                    <td>1</td>
-                    <td>0</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Banana</td>
-                    <td>80 g</td>
-                    <td>71</td>
-                    <td>1</td>
-                    <td>19</td>
-                    <td>0</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Miele</td>
-                    <td>10 g</td>
-                    <td>30</td>
-                    <td>0</td>
-                    <td>8</td>
-                    <td>0</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h3>08:15 Colazione post-workout</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Alimento</th>
-                    <th>Quantità</th>
-                    <th>Kcal</th>
-                    <th>Proteine</th>
-                    <th>Carboidrati</th>
-                    <th>Grassi</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Whey</td>
-                    <td>30 g</td>
-                    <td>120</td>
-                    <td>24</td>
-                    <td>3</td>
-                    <td>2</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Avena</td>
-                    <td>60 g</td>
-                    <td>228</td>
-                    <td>8</td>
-                    <td>40</td>
-                    <td>4</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Yogurt greco 0–2%</td>
-                    <td>200 g</td>
-                    <td>130</td>
-                    <td>20</td>
-                    <td>8</td>
-                    <td>3</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Burro di arachidi</td>
-                    <td>20 g</td>
-                    <td>120</td>
-                    <td>5</td>
-                    <td>3</td>
-                    <td>10</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Miele</td>
-                    <td>10 g</td>
-                    <td>30</td>
-                    <td>0</td>
-                    <td>8</td>
-                    <td>0</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h3>11:00 Spuntino</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Alimento</th>
-                    <th>Quantità</th>
-                    <th>Kcal</th>
-                    <th>Proteine</th>
-                    <th>Carboidrati</th>
-                    <th>Grassi</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Mandorle</td>
-                    <td>20 g</td>
-                    <td>116</td>
-                    <td>4</td>
-                    <td>4</td>
-                    <td>10</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Mela</td>
-                    <td>150 g</td>
-                    <td>78</td>
-                    <td>0</td>
-                    <td>21</td>
-                    <td>0</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h3>13:30 Pranzo</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Alimento</th>
-                    <th>Quantità</th>
-                    <th>Kcal</th>
-                    <th>Proteine</th>
-                    <th>Carboidrati</th>
-                    <th>Grassi</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Riso basmati crudo</td>
-                    <td>90 g</td>
-                    <td>315</td>
-                    <td>6</td>
-                    <td>70</td>
-                    <td>1</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Petto di pollo</td>
-                    <td>180 g</td>
-                    <td>297</td>
-                    <td>40</td>
-                    <td>0</td>
-                    <td>13</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Olio EVO</td>
-                    <td>10 g</td>
-                    <td>90</td>
-                    <td>0</td>
-                    <td>0</td>
-                    <td>10</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Verdure miste</td>
-                    <td>150 g</td>
-                    <td>40</td>
-                    <td>2</td>
-                    <td>8</td>
-                    <td>0</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h3>16:30 Spuntino pomeridiano</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Alimento</th>
-                    <th>Quantità</th>
-                    <th>Kcal</th>
-                    <th>Proteine</th>
-                    <th>Carboidrati</th>
-                    <th>Grassi</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Yogurt greco</td>
-                    <td>170 g</td>
-                    <td>110</td>
-                    <td>17</td>
-                    <td>6</td>
-                    <td>3</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Noci</td>
-                    <td>15 g</td>
-                    <td>98</td>
-                    <td>2</td>
-                    <td>2</td>
-                    <td>9</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h3>20:00 Cena</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Alimento</th>
-                    <th>Quantità</th>
-                    <th>Kcal</th>
-                    <th>Proteine</th>
-                    <th>Carboidrati</th>
-                    <th>Grassi</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Salmone</td>
-                    <td>150 g</td>
-                    <td>300</td>
-                    <td>30</td>
-                    <td>0</td>
-                    <td>20</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Patate</td>
-                    <td>250 g</td>
-                    <td>200</td>
-                    <td>5</td>
-                    <td>45</td>
-                    <td>0</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Olio EVO</td>
-                    <td>10 g</td>
-                    <td>90</td>
-                    <td>0</td>
-                    <td>0</td>
-                    <td>10</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Pane</td>
-                    <td>30 g</td>
-                    <td>81</td>
-                    <td>3</td>
-                    <td>15</td>
-                    <td>1</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Verdure miste</td>
-                    <td>150 g</td>
-                    <td>40</td>
-                    <td>2</td>
-                    <td>8</td>
-                    <td>0</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <div class="totale">
-            <h3>Totale lunedì</h3>
-            <ul>
-                <li><strong>Kcal totali:</strong> 2944.</li>
-                <li><strong>Proteine:</strong> 170 g.</li>
-                <li><strong>Carboidrati:</strong> 360 g circa.</li>
-                <li><strong>Grassi:</strong> 96 g circa.</li>
-            </ul>
+
+<header>
+  <div class="h-row">
+    <span class="h-title">Piano Massa</span>
+    <span class="h-date" id="dateLabel"></span>
+  </div>
+  <div class="h-main" id="headerMain">Ciao 👋</div>
+</header>
+
+<main>
+  <!-- ============ OGGI / DASHBOARD ============ -->
+  <section class="view active" id="view-oggi">
+    <div class="card">
+      <div class="card-hd">
+        <span style="font-size:15px;font-weight:700;">Calorie di oggi</span>
+        <span class="h-date" id="kcalTarget"></span>
+      </div>
+      <div class="rings" style="margin-top:10px;">
+        <div class="ring-wrap">
+          <svg width="120" height="120" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="52" fill="none" stroke="var(--surface2)" stroke-width="11"/>
+            <circle id="kcalRing" cx="60" cy="60" r="52" fill="none" stroke="var(--accent)" stroke-width="11"
+              stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="326.7"
+              transform="rotate(-90 60 60)" style="transition:stroke-dashoffset .5s cubic-bezier(.4,0,.2,1);"/>
+          </svg>
+          <div class="ring-center">
+            <div class="ring-pct num" id="kcalNow">0</div>
+            <div class="ring-cap">/ <span id="kcalGoal" class="num">3200</span> kcal</div>
+          </div>
         </div>
-        
-        <h2>Martedì — Recupero</h2>
-        
-        <h3>07:00 Colazione</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Alimento</th>
-                    <th>Quantità</th>
-                    <th>Kcal</th>
-                    <th>Proteine</th>
-                    <th>Carboidrati</th>
-                    <th>Grassi</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Uova intere</td>
-                    <td>2</td>
-                    <td>140</td>
-                    <td>12</td>
-                    <td>1</td>
-                    <td>10</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Pane integrale</td>
-                    <td>80 g</td>
-                    <td>216</td>
-                    <td>8</td>
-                    <td>40</td>
-                    <td>3</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Burro di arachidi</td>
-                    <td>15 g</td>
-                    <td>90</td>
-                    <td>4</td>
-                    <td>2</td>
-                    <td>8</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Banana</td>
-                    <td>100 g</td>
-                    <td>89</td>
-                    <td>1</td>
-                    <td>23</td>
-                    <td>0</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h3>10:30 Spuntino</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Alimento</th>
-                    <th>Quantità</th>
-                    <th>Kcal</th>
-                    <th>Proteine</th>
-                    <th>Carboidrati</th>
-                    <th>Grassi</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Yogurt greco</td>
-                    <td>200 g</td>
-                    <td>130</td>
-                    <td>20</td>
-                    <td>8</td>
-                    <td>3</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Frutta secca mista</td>
-                    <td>20 g</td>
-                    <td>120</td>
-                    <td>4</td>
-                    <td>4</td>
-                    <td>10</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h3>13:30 Pranzo</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Alimento</th>
-                    <th>Quantità</th>
-                    <th>Kcal</th>
-                    <th>Proteine</th>
-                    <th>Carboidrati</th>
-                    <th>Grassi</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Pasta</td>
-                    <td>90 g</td>
-                    <td>321</td>
-                    <td>11</td>
-                    <td>64</td>
-                    <td>2</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Tonno al naturale</td>
-                    <td>120 g</td>
-                    <td>144</td>
-                    <td>30</td>
-                    <td>0</td>
-                    <td>1</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Olio EVO</td>
-                    <td>10 g</td>
-                    <td>90</td>
-                    <td>0</td>
-                    <td>0</td>
-                    <td>10</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Verdure</td>
-                    <td>150 g</td>
-                    <td>40</td>
-                    <td>2</td>
-                    <td>8</td>
-                    <td>0</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h3>16:30 Spuntino pomeridiano</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Alimento</th>
-                    <th>Quantità</th>
-                    <th>Kcal</th>
-                    <th>Proteine</th>
-                    <th>Carboidrati</th>
-                    <th>Grassi</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Whey</td>
-                    <td>30 g</td>
-                    <td>120</td>
-                    <td>24</td>
-                    <td>3</td>
-                    <td>2</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Barretta proteica</td>
-                    <td>1</td>
-                    <td>200</td>
-                    <td>20</td>
-                    <td>20</td>
-                    <td>6</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h3>20:00 Cena</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Alimento</th>
-                    <th>Quantità</th>
-                    <th>Kcal</th>
-                    <th>Proteine</th>
-                    <th>Carboidrati</th>
-                    <th>Grassi</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Tacchino</td>
-                    <td>180 g</td>
-                    <td>297</td>
-                    <td>40</td>
-                    <td>0</td>
-                    <td>13</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Riso basmati crudo</td>
-                    <td>70 g</td>
-                    <td>245</td>
-                    <td>5</td>
-                    <td>54</td>
-                    <td>1</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Olio EVO</td>
-                    <td>10 g</td>
-                    <td>90</td>
-                    <td>0</td>
-                    <td>0</td>
-                    <td>10</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Verdure</td>
-                    <td>150 g</td>
-                    <td>40</td>
-                    <td>2</td>
-                    <td>8</td>
-                    <td>0</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <div class="totale">
-            <h3>Totale martedì</h3>
-            <ul>
-                <li><strong>Kcal totali:</strong> 2372.</li>
-                <li><strong>Proteine:</strong> 183 g.</li>
-                <li><strong>Carboidrati:</strong> 235 g.</li>
-                <li><strong>Grassi:</strong> 79 g.</li>
-            </ul>
-            
-            <h4>Aggiunte opzionali per arrivare a 2600–2700</h4>
-            <ul>
-                <li>Pane 40 g.</li>
-                <li>Frutta secca 15 g.</li>
-                <li>Miele 15 g.</li>
-                <li>Olio EVO 10 g.</li>
-            </ul>
+        <div class="macro-list">
+          <div class="macro">
+            <div class="macro-top"><b>Proteine</b><span><span id="pNow" class="num">0</span> / <span id="pGoal" class="num">160</span> g</span></div>
+            <div class="bar"><i id="pBar" style="width:0;background:var(--proteine);"></i></div>
+          </div>
+          <div class="macro">
+            <div class="macro-top"><b>Carboidrati</b><span><span id="cNow" class="num">0</span> / <span id="cGoal" class="num">400</span> g</span></div>
+            <div class="bar"><i id="cBar" style="width:0;background:var(--carbo);"></i></div>
+          </div>
+          <div class="macro">
+            <div class="macro-top"><b>Grassi</b><span><span id="gNow" class="num">0</span> / <span id="gGoal" class="num">88</span> g</span></div>
+            <div class="bar"><i id="gBar" style="width:0;background:var(--grassi);"></i></div>
+          </div>
         </div>
-        
-        <h2>Mercoledì — Allenamento</h2>
-        
-        <h3>06:30 Pre-workout</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Alimento</th>
-                    <th>Quantità</th>
-                    <th>Kcal</th>
-                    <th>Proteine</th>
-                    <th>Carboidrati</th>
-                    <th>Grassi</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Caffè</td>
-                    <td>1 tazza</td>
-                    <td>5</td>
-                    <td>0</td>
-                    <td>1</td>
-                    <td>0</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Banana</td>
-                    <td>80 g</td>
-                    <td>71</td>
-                    <td>1</td>
-                    <td>19</td>
-                    <td>0</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h3>08:15 Colazione post-workout</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Alimento</th>
-                    <th>Quantità</th>
-                    <th>Kcal</th>
-                    <th>Proteine</th>
-                    <th>Carboidrati</th>
-                    <th>Grassi</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Whey</td>
-                    <td>30 g</td>
-                    <td>120</td>
-                    <td>24</td>
-                    <td>3</td>
-                    <td>2</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Pane</td>
-                    <td>80 g</td>
-                    <td>216</td>
-                    <td>8</td>
-                    <td>40</td>
-                    <td>3</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Uova intere</td>
-                    <td>2</td>
-                    <td>140</td>
-                    <td>12</td>
-                    <td>1</td>
-                    <td>10</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Yogurt greco</td>
-                    <td>170 g</td>
-                    <td>110</td>
-                    <td>17</td>
-                    <td>6</td>
-                    <td>3</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Miele</td>
-                    <td>10 g</td>
-                    <td>30</td>
-                    <td>0</td>
-                    <td>8</td>
-                    <td>0</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h3>11:00 Spuntino</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Alimento</th>
-                    <th>Quantità</th>
-                    <th>Kcal</th>
-                    <th>Proteine</th>
-                    <th>Carboidrati</th>
-                    <th>Grassi</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Mandorle</td>
-                    <td>20 g</td>
-                    <td>116</td>
-                    <td>4</td>
-                    <td>4</td>
-                    <td>10</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Pera</td>
-                    <td>160 g</td>
-                    <td>90</td>
-                    <td>1</td>
-                    <td>24</td>
-                    <td>0</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h3>13:30 Pranzo</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Alimento</th>
-                    <th>Quantità</th>
-                    <th>Kcal</th>
-                    <th>Proteine</th>
-                    <th>Carboidrati</th>
-                    <th>Grassi</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Pasta</td>
-                    <td>100 g</td>
-                    <td>356</td>
-                    <td>12</td>
-                    <td>72</td>
-                    <td>2</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Petto di pollo</td>
-                    <td>170 g</td>
-                    <td>280</td>
-                    <td>38</td>
-                    <td>0</td>
-                    <td>12</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Olio EVO</td>
-                    <td>10 g</td>
-                    <td>90</td>
-                    <td>0</td>
-                    <td>0</td>
-                    <td>10</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Verdure</td>
-                    <td>150 g</td>
-                    <td>40</td>
-                    <td>2</td>
-                    <td>8</td>
-                    <td>0</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h3>16:30 Spuntino pomeridiano</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Alimento</th>
-                    <th>Quantità</th>
-                    <th>Kcal</th>
-                    <th>Proteine</th>
-                    <th>Carboidrati</th>
-                    <th>Grassi</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Yogurt greco</td>
-                    <td>200 g</td>
-                    <td>130</td>
-                    <td>20</td>
-                    <td>8</td>
-                    <td>3</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Burro di arachidi</td>
-                    <td>20 g</td>
-                    <td>120</td>
-                    <td>5</td>
-                    <td>3</td>
-                    <td>10</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h3>20:00 Cena</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Alimento</th>
-                    <th>Quantità</th>
-                    <th>Kcal</th>
-                    <th>Proteine</th>
-                    <th>Carboidrati</th>
-                    <th>Grassi</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Merluzzo</td>
-                    <td>200 g</td>
-                    <td>160</td>
-                    <td>36</td>
-                    <td>0</td>
-                    <td>2</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Riso basmati crudo</td>
-                    <td>90 g</td>
-                    <td>315</td>
-                    <td>6</td>
-                    <td>70</td>
-                    <td>1</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Olio EVO</td>
-                    <td>10 g</td>
-                    <td>90</td>
-                    <td>0</td>
-                    <td>0</td>
-                    <td>10</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Verdure</td>
-                    <td>150 g</td>
-                    <td>40</td>
-                    <td>2</td>
-                    <td>8</td>
-                    <td>0</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <div class="totale">
-            <h3>Totale mercoledì</h3>
-            <ul>
-                <li><strong>Kcal totali:</strong> circa 2799.</li>
-                <li><strong>Proteine:</strong> circa 187 g.</li>
-                <li><strong>Carboidrati:</strong> circa 266 g.</li>
-                <li><strong>Grassi:</strong> circa 83 g.</li>
-            </ul>
-        </div>
-        
-        <h2>Giovedì — Recupero</h2>
-        
-        <h3>07:00 Colazione</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Alimento</th>
-                    <th>Quantità</th>
-                    <th>Kcal</th>
-                    <th>Proteine</th>
-                    <th>Carboidrati</th>
-                    <th>Grassi</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Yogurt greco</td>
-                    <td>250 g</td>
-                    <td>160</td>
-                    <td>25</td>
-                    <td>10</td>
-                    <td>4</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Avena</td>
-                    <td>50 g</td>
-                    <td>190</td>
-                    <td>7</td>
-                    <td>33</td>
-                    <td>4</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Burro di arachidi</td>
-                    <td>20 g</td>
-                    <td>120</td>
-                    <td>5</td>
-                    <td>3</td>
-                    <td>10</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Banana</td>
-                    <td>100 g</td>
-                    <td>89</td>
-                    <td>1</td>
-                    <td>23</td>
-                    <td>0</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h3>10:30 Spuntino</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Alimento</th>
-                    <th>Quantità</th>
-                    <th>Kcal</th>
-                    <th>Proteine</th>
-                    <th>Carboidrati</th>
-                    <th>Grassi</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Frutta secca mista</td>
-                    <td>20 g</td>
-                    <td>120</td>
-                    <td>4</td>
-                    <td>4</td>
-                    <td>10</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Mela</td>
-                    <td>150 g</td>
-                    <td>78</td>
-                    <td>0</td>
-                    <td>21</td>
-                    <td>0</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h3>13:30 Pranzo</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Alimento</th>
-                    <th>Quantità</th>
-                    <th>Kcal</th>
-                    <th>Proteine</th>
-                    <th>Carboidrati</th>
-                    <th>Grassi</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Riso basmati crudo</td>
-                    <td>90 g</td>
-                    <td>315</td>
-                    <td>6</td>
-                    <td>70</td>
-                    <td>1</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Tacchino</td>
-                    <td>180 g</td>
-                    <td>297</td>
-                    <td>40</td>
-                    <td>0</td>
-                    <td>13</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Olio EVO</td>
-                    <td>10 g</td>
-                    <td>90</td>
-                    <td>0</td>
-                    <td>0</td>
-                    <td>10</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Verdure</td>
-                    <td>150 g</td>
-                    <td>40</td>
-                    <td>2</td>
-                    <td>8</td>
-                    <td>0</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h3>16:30 Spuntino pomeridiano</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Alimento</th>
-                    <th>Quantità</th>
-                    <th>Kcal</th>
-                    <th>Proteine</th>
-                    <th>Carboidrati</th>
-                    <th>Grassi</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Whey</td>
-                    <td>30 g</td>
-                    <td>120</td>
-                    <td>24</td>
-                    <td>3</td>
-                    <td>2</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Barretta proteica</td>
-                    <td>1</td>
-                    <td>200</td>
-                    <td>20</td>
-                    <td>20</td>
-                    <td>6</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h3>20:00 Cena</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Alimento</th>
-                    <th>Quantità</th>
-                    <th>Kcal</th>
-                    <th>Proteine</th>
-                    <th>Carboidrati</th>
-                    <th>Grassi</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Salmone</td>
-                    <td>150 g</td>
-                    <td>300</td>
-                    <td>30</td>
-                    <td>0</td>
-                    <td>20</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Patate</td>
-                    <td>200 g</td>
-                    <td>160</td>
-                    <td>4</td>
-                    <td>36</td>
-                    <td>0</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Olio EVO</td>
-                    <td>10 g</td>
-                    <td>90</td>
-                    <td>0</td>
-                    <td>0</td>
-                    <td>10</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Verdure</td>
-                    <td>150 g</td>
-                    <td>40</td>
-                    <td>2</td>
-                    <td>8</td>
-                    <td>0</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h2>Venerdì — Allenamento</h2>
-        
-        <h3>06:30 Pre-workout</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Alimento</th>
-                    <th>Quantità</th>
-                    <th>Kcal</th>
-                    <th>Proteine</th>
-                    <th>Carboidrati</th>
-                    <th>Grassi</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Caffè</td>
-                    <td>1 tazza</td>
-                    <td>5</td>
-                    <td>0</td>
-                    <td>1</td>
-                    <td>0</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Banana</td>
-                    <td>80 g</td>
-                    <td>71</td>
-                    <td>1</td>
-                    <td>19</td>
-                    <td>0</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h3>08:15 Colazione post-workout</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Alimento</th>
-                    <th>Quantità</th>
-                    <th>Kcal</th>
-                    <th>Proteine</th>
-                    <th>Carboidrati</th>
-                    <th>Grassi</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Whey</td>
-                    <td>30 g</td>
-                    <td>120</td>
-                    <td>24</td>
-                    <td>3</td>
-                    <td>2</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Avena</td>
-                    <td>60 g</td>
-                    <td>228</td>
-                    <td>8</td>
-                    <td>40</td>
-                    <td>4</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Yogurt greco</td>
-                    <td>200 g</td>
-                    <td>130</td>
-                    <td>20</td>
-                    <td>8</td>
-                    <td>3</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Burro di arachidi</td>
-                    <td>20 g</td>
-                    <td>120</td>
-                    <td>5</td>
-                    <td>3</td>
-                    <td>10</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Miele</td>
-                    <td>10 g</td>
-                    <td>30</td>
-                    <td>0</td>
-                    <td>8</td>
-                    <td>0</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h3>11:00 Spuntino</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Alimento</th>
-                    <th>Quantità</th>
-                    <th>Kcal</th>
-                    <th>Proteine</th>
-                    <th>Carboidrati</th>
-                    <th>Grassi</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Mandorle</td>
-                    <td>20 g</td>
-                    <td>116</td>
-                    <td>4</td>
-                    <td>4</td>
-                    <td>10</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Frutto</td>
-                    <td>150 g</td>
-                    <td>80</td>
-                    <td>1</td>
-                    <td>20</td>
-                    <td>0</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h3>13:30 Pranzo</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Alimento</th>
-                    <th>Quantità</th>
-                    <th>Kcal</th>
-                    <th>Proteine</th>
-                    <th>Carboidrati</th>
-                    <th>Grassi</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Pasta</td>
-                    <td>100 g</td>
-                    <td>356</td>
-                    <td>12</td>
-                    <td>72</td>
-                    <td>2</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Pollo</td>
-                    <td>180 g</td>
-                    <td>297</td>
-                    <td>40</td>
-                    <td>0</td>
-                    <td>13</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Olio EVO</td>
-                    <td>10 g</td>
-                    <td>90</td>
-                    <td>0</td>
-                    <td>0</td>
-                    <td>10</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Verdure</td>
-                    <td>150 g</td>
-                    <td>40</td>
-                    <td>2</td>
-                    <td>8</td>
-                    <td>0</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h3>16:30 Spuntino pomeridiano</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Alimento</th>
-                    <th>Quantità</th>
-                    <th>Kcal</th>
-                    <th>Proteine</th>
-                    <th>Carboidrati</th>
-                    <th>Grassi</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Yogurt greco</td>
-                    <td>170 g</td>
-                    <td>110</td>
-                    <td>17</td>
-                    <td>6</td>
-                    <td>3</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Noci</td>
-                    <td>15 g</td>
-                    <td>98</td>
-                    <td>2</td>
-                    <td>2</td>
-                    <td>9</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h3>20:00 Cena</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Alimento</th>
-                    <th>Quantità</th>
-                    <th>Kcal</th>
-                    <th>Proteine</th>
-                    <th>Carboidrati</th>
-                    <th>Grassi</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Tonno</td>
-                    <td>120 g</td>
-                    <td>144</td>
-                    <td>30</td>
-                    <td>0</td>
-                    <td>1</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Riso basmati crudo</td>
-                    <td>90 g</td>
-                    <td>315</td>
-                    <td>6</td>
-                    <td>70</td>
-                    <td>1</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Olio EVO</td>
-                    <td>10 g</td>
-                    <td>90</td>
-                    <td>0</td>
-                    <td>0</td>
-                    <td>10</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Verdure</td>
-                    <td>150 g</td>
-                    <td>40</td>
-                    <td>2</td>
-                    <td>8</td>
-                    <td>0</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h2>Sabato — Allenamento</h2>
-        
-        <h3>06:30 Pre-workout</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Alimento</th>
-                    <th>Quantità</th>
-                    <th>Kcal</th>
-                    <th>Proteine</th>
-                    <th>Carboidrati</th>
-                    <th>Grassi</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Caffè</td>
-                    <td>1 tazza</td>
-                    <td>5</td>
-                    <td>0</td>
-                    <td>1</td>
-                    <td>0</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Banana</td>
-                    <td>80 g</td>
-                    <td>71</td>
-                    <td>1</td>
-                    <td>19</td>
-                    <td>0</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h3>08:15 Colazione post-workout</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Alimento</th>
-                    <th>Quantità</th>
-                    <th>Kcal</th>
-                    <th>Proteine</th>
-                    <th>Carboidrati</th>
-                    <th>Grassi</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Uova intere</td>
-                    <td>2</td>
-                    <td>140</td>
-                    <td>12</td>
-                    <td>1</td>
-                    <td>10</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Pane</td>
-                    <td>80 g</td>
-                    <td>216</td>
-                    <td>8</td>
-                    <td>40</td>
-                    <td>3</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Yogurt greco</td>
-                    <td>200 g</td>
-                    <td>130</td>
-                    <td>20</td>
-                    <td>8</td>
-                    <td>3</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Burro di arachidi</td>
-                    <td>15 g</td>
-                    <td>90</td>
-                    <td>4</td>
-                    <td>2</td>
-                    <td>8</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h3>11:00 Spuntino</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Alimento</th>
-                    <th>Quantità</th>
-                    <th>Kcal</th>
-                    <th>Proteine</th>
-                    <th>Carboidrati</th>
-                    <th>Grassi</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Whey</td>
-                    <td>30 g</td>
-                    <td>120</td>
-                    <td>24</td>
-                    <td>3</td>
-                    <td>2</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Frutta</td>
-                    <td>150 g</td>
-                    <td>80</td>
-                    <td>1</td>
-                    <td>20</td>
-                    <td>0</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h3>13:30 Pranzo</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Alimento</th>
-                    <th>Quantità</th>
-                    <th>Kcal</th>
-                    <th>Proteine</th>
-                    <th>Carboidrati</th>
-                    <th>Grassi</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Riso basmati crudo</td>
-                    <td>90 g</td>
-                    <td>315</td>
-                    <td>6</td>
-                    <td>70</td>
-                    <td>1</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Salmone</td>
-                    <td>150 g</td>
-                    <td>300</td>
-                    <td>30</td>
-                    <td>0</td>
-                    <td>20</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Olio EVO</td>
-                    <td>10 g</td>
-                    <td>90</td>
-                    <td>0</td>
-                    <td>0</td>
-                    <td>10</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Verdure</td>
-                    <td>150 g</td>
-                    <td>40</td>
-                    <td>2</td>
-                    <td>8</td>
-                    <td>0</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h3>16:30 Spuntino pomeridiano</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Alimento</th>
-                    <th>Quantità</th>
-                    <th>Kcal</th>
-                    <th>Proteine</th>
-                    <th>Carboidrati</th>
-                    <th>Grassi</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Frutta secca</td>
-                    <td>20 g</td>
-                    <td>120</td>
-                    <td>4</td>
-                    <td>4</td>
-                    <td>10</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Barretta proteica</td>
-                    <td>1</td>
-                    <td>200</td>
-                    <td>20</td>
-                    <td>20</td>
-                    <td>6</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h3>20:00 Cena</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Alimento</th>
-                    <th>Quantità</th>
-                    <th>Kcal</th>
-                    <th>Proteine</th>
-                    <th>Carboidrati</th>
-                    <th>Grassi</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Tacchino</td>
-                    <td>180 g</td>
-                    <td>297</td>
-                    <td>40</td>
-                    <td>0</td>
-                    <td>13</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Patate</td>
-                    <td>250 g</td>
-                    <td>200</td>
-                    <td>5</td>
-                    <td>45</td>
-                    <td>0</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Pane</td>
-                    <td>30 g</td>
-                    <td>81</td>
-                    <td>3</td>
-                    <td>15</td>
-                    <td>1</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Olio EVO</td>
-                    <td>10 g</td>
-                    <td>90</td>
-                    <td>0</td>
-                    <td>0</td>
-                    <td>10</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Verdure</td>
-                    <td>150 g</td>
-                    <td>40</td>
-                    <td>2</td>
-                    <td>8</td>
-                    <td>0</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h2>Domenica — Recupero</h2>
-        
-        <h3>07:30 Colazione</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Alimento</th>
-                    <th>Quantità</th>
-                    <th>Kcal</th>
-                    <th>Proteine</th>
-                    <th>Carboidrati</th>
-                    <th>Grassi</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Uova intere</td>
-                    <td>2</td>
-                    <td>140</td>
-                    <td>12</td>
-                    <td>1</td>
-                    <td>10</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Pane integrale</td>
-                    <td>80 g</td>
-                    <td>216</td>
-                    <td>8</td>
-                    <td>40</td>
-                    <td>3</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Banana</td>
-                    <td>100 g</td>
-                    <td>89</td>
-                    <td>1</td>
-                    <td>23</td>
-                    <td>0</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Burro di arachidi</td>
-                    <td>15 g</td>
-                    <td>90</td>
-                    <td>4</td>
-                    <td>2</td>
-                    <td>8</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h3>11:00 Spuntino</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Alimento</th>
-                    <th>Quantità</th>
-                    <th>Kcal</th>
-                    <th>Proteine</th>
-                    <th>Carboidrati</th>
-                    <th>Grassi</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Yogurt greco</td>
-                    <td>200 g</td>
-                    <td>130</td>
-                    <td>20</td>
-                    <td>8</td>
-                    <td>3</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Frutta secca mista</td>
-                    <td>20 g</td>
-                    <td>120</td>
-                    <td>4</td>
-                    <td>4</td>
-                    <td>10</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h3>13:30 Pranzo</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Alimento</th>
-                    <th>Quantità</th>
-                    <th>Kcal</th>
-                    <th>Proteine</th>
-                    <th>Carboidrati</th>
-                    <th>Grassi</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Pasta</td>
-                    <td>90 g</td>
-                    <td>321</td>
-                    <td>11</td>
-                    <td>64</td>
-                    <td>2</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Tonno al naturale</td>
-                    <td>120 g</td>
-                    <td>144</td>
-                    <td>30</td>
-                    <td>0</td>
-                    <td>1</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Olio EVO</td>
-                    <td>10 g</td>
-                    <td>90</td>
-                    <td>0</td>
-                    <td>0</td>
-                    <td>10</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Verdure</td>
-                    <td>150 g</td>
-                    <td>40</td>
-                    <td>2</td>
-                    <td>8</td>
-                    <td>0</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h3>16:30 Spuntino pomeridiano</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Alimento</th>
-                    <th>Quantità</th>
-                    <th>Kcal</th>
-                    <th>Proteine</th>
-                    <th>Carboidrati</th>
-                    <th>Grassi</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Whey</td>
-                    <td>30 g</td>
-                    <td>120</td>
-                    <td>24</td>
-                    <td>3</td>
-                    <td>2</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Barretta proteica</td>
-                    <td>1</td>
-                    <td>200</td>
-                    <td>20</td>
-                    <td>20</td>
-                    <td>6</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h3>20:00 Cena</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Alimento</th>
-                    <th>Quantità</th>
-                    <th>Kcal</th>
-                    <th>Proteine</th>
-                    <th>Carboidrati</th>
-                    <th>Grassi</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Pesce o carne magra</td>
-                    <td>180 g</td>
-                    <td>250</td>
-                    <td>40</td>
-                    <td>0</td>
-                    <td>10</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Riso o patate</td>
-                    <td>90 g riso crudo oppure 250 g patate</td>
-                    <td>300</td>
-                    <td>6</td>
-                    <td>60</td>
-                    <td>1</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Olio EVO</td>
-                    <td>10 g</td>
-                    <td>90</td>
-                    <td>0</td>
-                    <td>0</td>
-                    <td>10</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Verdure</td>
-                    <td>150 g</td>
-                    <td>40</td>
-                    <td>2</td>
-                    <td>8</td>
-                    <td>0</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h2>Allenamento — Struttura generale</h2>
-        <ul>
-            <li>4 sedute a settimana.</li>
-            <li>Allenamento al mattino.</li>
-            <li>Corpo libero + push-up board.</li>
-            <li>Copertura di tutti i gruppi muscolari, inclusi i minori.</li>
-            <li>Recuperi scritti in ogni esercizio.</li>
-            <li>Tabella progressione presente.</li>
-        </ul>
-        
-        <h2>FASE 0 — Prime 4 settimane</h2>
-        <ul>
-            <li>Per ogni esercizio: 1–2 serie buone.</li>
-            <li>Ripetizioni: 3–6 se il corpo è molto affaticato.</li>
-            <li>Ferma la serie quando la tecnica peggiora.</li>
-            <li>Recupero esercizi principali: 90–120 secondi.</li>
-            <li>Recupero esercizi accessori: 60–90 secondi.</li>
-        </ul>
-        
-        <h2>Lunedì — Push + core</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Esercizio</th>
-                    <th>Board / setup</th>
-                    <th>Gruppo muscolare</th>
-                    <th>Colore board</th>
-                    <th>Serie x reps</th>
-                    <th>Recupero</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Push-up board larga</td>
-                    <td>Board</td>
-                    <td>CHEST</td>
-                    <td>Blu</td>
-                    <td>4 x 8–12</td>
-                    <td>90 s</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Push-up board standard</td>
-                    <td>Board</td>
-                    <td>CHEST</td>
-                    <td>Blu</td>
-                    <td>3 x 8–12</td>
-                    <td>90 s</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Push-up board stretta</td>
-                    <td>Board</td>
-                    <td>TRICEPS</td>
-                    <td>Bianco</td>
-                    <td>3 x 6–10</td>
-                    <td>90 s</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Pike push-up</td>
-                    <td>Corpo libero</td>
-                    <td>SHOULDERS</td>
-                    <td>Rosso</td>
-                    <td>3 x 6–10</td>
-                    <td>90 s</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Plank</td>
-                    <td>Corpo libero</td>
-                    <td>CORE</td>
-                    <td>—</td>
-                    <td>3 x 30–60 s</td>
-                    <td>60 s</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Dead bug</td>
-                    <td>Corpo libero</td>
-                    <td>CORE</td>
-                    <td>—</td>
-                    <td>3 x 8–12/lato</td>
-                    <td>45 s</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h2>Martedì — Gambe</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Esercizio</th>
-                    <th>Gruppo muscolare</th>
-                    <th>Serie x reps</th>
-                    <th>Recupero</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Squat lento</td>
-                    <td>QUADS/GLUTES</td>
-                    <td>4 x 12–20</td>
-                    <td>90 s</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Bulgarian split squat</td>
-                    <td>QUADS/GLUTES</td>
-                    <td>3 x 8–12/gamba</td>
-                    <td>90 s</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Hip thrust</td>
-                    <td>GLUTES</td>
-                    <td>4 x 10–20</td>
-                    <td>90 s</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Romanian deadlift a una gamba</td>
-                    <td>HAMSTRINGS/GLUTES</td>
-                    <td>3 x 8–12/gamba</td>
-                    <td>90 s</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Calf raise</td>
-                    <td>CALVES</td>
-                    <td>4 x 15–25</td>
-                    <td>60 s</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Side plank</td>
-                    <td>OBLIQUES</td>
-                    <td>3 x 30–45 s/lato</td>
-                    <td>45 s</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h2>Giovedì — Pull + postura</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Esercizio</th>
-                    <th>Board / setup</th>
-                    <th>Gruppo muscolare</th>
-                    <th>Colore board</th>
-                    <th>Serie x reps</th>
-                    <th>Recupero</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Rematore sotto tavolo</td>
-                    <td>Tavolo</td>
-                    <td>BACK</td>
-                    <td>Giallo</td>
-                    <td>4 x 6–12</td>
-                    <td>90 s</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Rematore supino sotto tavolo</td>
-                    <td>Tavolo</td>
-                    <td>BACK</td>
-                    <td>Giallo</td>
-                    <td>3 x 8–12</td>
-                    <td>90 s</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Scapular row / Y-T-W</td>
-                    <td>Corpo libero o elastico</td>
-                    <td>BACK</td>
-                    <td>Giallo</td>
-                    <td>3 x 10–15</td>
-                    <td>60 s</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Reverse snow angel</td>
-                    <td>Corpo libero</td>
-                    <td>REAR DELTS/BACK</td>
-                    <td>Giallo</td>
-                    <td>3 x 12–15</td>
-                    <td>60 s</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Superman hold</td>
-                    <td>Corpo libero</td>
-                    <td>LUMBARI</td>
-                    <td>—</td>
-                    <td>3 x 20–40 s</td>
-                    <td>60 s</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Curl bicipiti elastico</td>
-                    <td>Elastico</td>
-                    <td>BICEPS</td>
-                    <td>—</td>
-                    <td>3 x 10–15</td>
-                    <td>60 s</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h2>Sabato — Full upper + core</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Esercizio</th>
-                    <th>Board / setup</th>
-                    <th>Gruppo muscolare</th>
-                    <th>Colore board</th>
-                    <th>Serie x reps</th>
-                    <th>Recupero</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Push-up board larga</td>
-                    <td>Board</td>
-                    <td>CHEST</td>
-                    <td>Blu</td>
-                    <td>3 x 8–12</td>
-                    <td>90 s</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Push-up board standard</td>
-                    <td>Board</td>
-                    <td>CHEST</td>
-                    <td>Blu</td>
-                    <td>3 x 8–12</td>
-                    <td>90 s</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Push-up board stretta</td>
-                    <td>Board</td>
-                    <td>TRICEPS</td>
-                    <td>Bianco</td>
-                    <td>3 x 6–10</td>
-                    <td>90 s</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Pike push-up</td>
-                    <td>Corpo libero</td>
-                    <td>SHOULDERS</td>
-                    <td>Rosso</td>
-                    <td>3 x 6–10</td>
-                    <td>90 s</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Rematore sotto tavolo</td>
-                    <td>Tavolo</td>
-                    <td>BACK</td>
-                    <td>Giallo</td>
-                    <td>3 x 8–12</td>
-                    <td>90 s</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Scapular row</td>
-                    <td>Corpo libero o elastico</td>
-                    <td>BACK/POSTURA</td>
-                    <td>Giallo</td>
-                    <td>3 x 10–15</td>
-                    <td>60 s</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Hollow hold</td>
-                    <td>Corpo libero</td>
-                    <td>CORE</td>
-                    <td>—</td>
-                    <td>3 x 20–40 s</td>
-                    <td>45 s</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h2>Progressione 8 settimane</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Settimana</th>
-                    <th>Peso medio</th>
-                    <th>Girovita</th>
-                    <th>Allenamenti completati</th>
-                    <th>Kcal media</th>
-                    <th>Note</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>1</td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>2</td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>3</td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>4</td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>5</td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>6</td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>7</td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>8</td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h2>Regole di correzione</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Caso</th>
-                    <th>Azione</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Peso fermo 2 settimane</td>
-                    <td>+150–200 kcal</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Peso sale troppo veloce</td>
-                    <td>−100–150 kcal</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Fame troppo bassa</td>
-                    <td>Spostare kcal su shake, olio, frutta secca</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Recupero scarso</td>
-                    <td>Ridurre volume o togliere 1 esercizio</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Tecnica scarsa</td>
-                    <td>Scala progressione</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h2>Integratori</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Integratore</th>
-                    <th>Dose</th>
-                    <th>Quando</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Creatina monoidrato</td>
-                    <td>3–5 g</td>
-                    <td>Ogni giorno</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Whey</td>
-                    <td>25–30 g</td>
-                    <td>Post WO o per chiudere proteine</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Barretta proteica</td>
-                    <td>1</td>
-                    <td>Quando sei fuori casa</td>
-                    <td><input type="checkbox"></td>
-                </tr>
-            </tbody>
-        </table>
-        
+      </div>
     </div>
+
+    <div class="section-label">Aggiunta rapida</div>
+    <div class="card">
+      <div class="chips" id="quickChips"></div>
+    </div>
+
+    <div class="section-label">Allenamento di oggi</div>
+    <div class="card" id="todayWorkout"></div>
+  </section>
+
+  <!-- ============ ALLENAMENTO ============ -->
+  <section class="view" id="view-allena">
+    <div class="day-tabs" id="dayTabs"></div>
+    <div class="tip" id="dayTip"></div>
+    <div id="exerciseList"></div>
+    <button class="reset-day" id="resetWorkout">Azzera spunte di oggi</button>
+  </section>
+
+  <!-- ============ DIETA ============ -->
+  <section class="view" id="view-dieta">
+    <div class="card">
+      <div class="card-hd">
+        <span style="font-size:15px;font-weight:700;">Pasti del piano</span>
+        <span class="h-date"><span id="mealsDone" class="num">0</span>/6</span>
+      </div>
+      <div id="mealList" style="margin-top:6px;"></div>
+    </div>
+    <div class="tip"><b>Suggerimento:</b> spunta un pasto per sommare automaticamente le sue calorie e i macro alla dashboard. Per porzioni extra usa l'aggiunta rapida nella schermata Oggi.</div>
+    <button class="reset-day" id="resetMeals">Azzera pasti di oggi</button>
+  </section>
+
+  <!-- ============ PESO / PROGRESSI ============ -->
+  <section class="view" id="view-peso">
+    <div class="card">
+      <div class="card-hd"><span style="font-size:15px;font-weight:700;">Peso corporeo</span></div>
+      <div class="big-stat" style="margin-top:8px;">
+        <span class="v num" id="weightLatest">—</span><span class="u">kg</span>
+      </div>
+      <div class="trend flat" id="weightTrend">Aggiungi la prima pesata per iniziare</div>
+      <svg class="chart" id="weightChart" viewBox="0 0 320 150" preserveAspectRatio="none"></svg>
+      <div class="add-weight">
+        <input type="number" inputmode="decimal" step="0.1" id="weightInput" placeholder="es. 75.4">
+        <button class="btn" id="addWeight">Salva</button>
+      </div>
+      <div class="tip" style="margin:14px 0 0;"><b>Come pesarti:</b> ogni mattina a digiuno, dopo il bagno. Guarda la media settimanale, non il singolo giorno. Obiettivo: +0,25/0,5 kg a settimana.</div>
+    </div>
+    <div class="section-label">Storico</div>
+    <div class="card" id="weightLog"></div>
+  </section>
+
+  <!-- ============ IMPOSTAZIONI ============ -->
+  <section class="view" id="view-impo">
+    <div class="section-label">Obiettivi giornalieri</div>
+    <div class="card">
+      <div class="logger" style="flex-wrap:wrap;gap:12px;">
+        <div class="log-field" style="min-width:42%;"><label>Calorie</label><input type="number" inputmode="numeric" id="setKcal"></div>
+        <div class="log-field" style="min-width:42%;"><label>Proteine (g)</label><input type="number" inputmode="numeric" id="setP"></div>
+        <div class="log-field" style="min-width:42%;"><label>Carboidrati (g)</label><input type="number" inputmode="numeric" id="setC"></div>
+        <div class="log-field" style="min-width:42%;"><label>Grassi (g)</label><input type="number" inputmode="numeric" id="setG"></div>
+      </div>
+      <button class="btn" id="saveGoals" style="width:100%;margin-top:14px;padding:13px;">Salva obiettivi</button>
+    </div>
+    <div class="section-label">I tuoi dati</div>
+    <div class="tip">I dati restano salvati su questo iPhone, nel browser. Non vengono inviati da nessuna parte. Esportali ogni tanto come backup: se cancelli i dati di Safari o cambi telefono, l'export ti permette di reimportarli.</div>
+    <div class="card">
+      <div class="data-row">
+        <button id="exportBtn">⬇ Esporta backup</button>
+        <button id="importBtn">⬆ Importa backup</button>
+      </div>
+      <input type="file" id="importFile" accept=".json" style="display:none;">
+      <div class="data-row" style="margin-top:10px;">
+        <button id="wipeBtn" style="color:#ff6b6b;">Cancella tutti i dati</button>
+      </div>
+    </div>
+    <div class="empty" style="padding-top:30px;">Piano Massa · v1<br>Funziona offline · Nessun account · Nessun costo</div>
+  </section>
+</main>
+
+<nav id="tabbar"></nav>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* ============================================================
+   DATI DEL PIANO — esercizi e pasti reali dal documento
+   ============================================================ */
+const WORKOUTS = {
+  A: { label:"Lun · A", tip:"<b>Full-body A.</b> Usa sempre le maniglie della board (presa neutra) per proteggere i polsi. Squat = il tuo esercizio più importante.",
+    ex:[
+      {n:"Squat con zaino zavorrato", s:"4 serie × 8-12", note:"Schiena dritta, scendi fino a coscia parallela. È il movimento che costruisce più massa: dagli priorità."},
+      {n:"Push-up board (presa petto)", s:"4 serie × max", note:"Maniglie nei fori per il petto. Discesa lenta 2-3 sec, fermati 1-2 ripetizioni prima del cedimento."},
+      {n:"Affondi con zaino (alternati)", s:"3 serie × 10/gamba", note:"Passo lungo, ginocchio non oltre la punta del piede. Busto eretto."},
+      {n:"Pike push-up", s:"3 serie × 6-12", note:"Bacino in alto a V, spingi con le spalle verso il basso. Lavora i deltoidi."},
+      {n:"Hip thrust a terra con zaino", s:"3 serie × 12-15", note:"Spalle a terra o su rialzo, zaino sul bacino, spingi coi glutei e stringi in alto."},
+      {n:"Plank", s:"3 serie × 30-60 sec", note:"Corpo in linea, addome contratto. Sui gomiti per salvare i polsi."},
+    ]},
+  B: { label:"Mer · B", tip:"<b>Full-body B.</b> Oggi c'è il rematore: è l'unico vero lavoro di schiena della settimana, curalo. Tira lo zaino verso l'ombelico, non strappare.",
+    ex:[
+      {n:"Squat bulgaro con zaino", s:"4 serie × 8-10/gamba", note:"Piede dietro su sedia/divano. Duro ma fortissimo sulle gambe. Scendi controllato."},
+      {n:"Push-up board (presa stretta)", s:"4 serie × max", note:"Maniglie vicine: enfasi sui tricipiti. Gomiti vicino al corpo."},
+      {n:"Rematore con zaino (busto piegato)", s:"4 serie × 10-12", note:"Busto a ~45°, schiena dritta, tira lo zaino verso l'ombelico. Stringi le scapole in alto."},
+      {n:"Stacco rumeno con zaino", s:"3 serie × 10-12", note:"Gambe semi-tese, spingi il bacino indietro, senti il femorale allungarsi. Schiena neutra."},
+      {n:"Push-up declinati (piedi rialzati)", s:"3 serie × 8-12", note:"Piedi su sedia: più carico sulla parte alta del petto e spalle."},
+      {n:"Hollow hold", s:"3 serie × 20-40 sec", note:"Schiena a terra ben aderente, gambe e spalle sollevate. Core."},
+    ]},
+  C: { label:"Ven · C", tip:"<b>Full-body C.</b> Oggi giochi col tempo: discese lentissime per rendere tutto più duro senza aggiungere peso. È un trucco prezioso quando non puoi caricare di più.",
+    ex:[
+      {n:"Squat con zaino (4 sec discesa)", s:"4 serie × 8-12", note:"Scendi in 4 secondi pieni, risali normale. Brucia molto di più a parità di peso."},
+      {n:"Pike push-up rialzati", s:"4 serie × 6-10", note:"Piedi su rialzo, avvicinandoti alla verticale: più carico sulle spalle."},
+      {n:"Affondi camminati con zaino", s:"3 serie × 12/gamba", note:"In avanti alternando le gambe. Se hai poco spazio, falli sul posto."},
+      {n:"Push-up board (presa larga)", s:"3 serie × max", note:"Maniglie larghe: enfasi sul petto esterno."},
+      {n:"Ponte glutei a una gamba", s:"3 serie × 12/gamba", note:"Una gamba tesa in aria, spingi con l'altra. Carico naturale sui glutei."},
+      {n:"Superman + Plank laterale", s:"3 serie × 30 sec", note:"Catena posteriore (superman) e core obliquo (plank laterale per lato)."},
+    ]},
+};
+// ordine giorni per "allenamento di oggi": Lun=A Mer=B Ven=C, altri = riposo
+const DAY_MAP = {1:"A",3:"B",5:"C"}; // 0=dom
+
+const MEALS = [
+  {n:"Colazione", d:"Avena al cacao + latte intero + 2 uova intere + 100g albume + yogurt greco + banana + 30g mandorle + miele", kcal:780, p:50, c:78, g:30},
+  {n:"Spuntino mattina", d:"Shaker: 30g proteine + 500ml latte intero + banana + 1 cucchiaio burro d'arachidi", kcal:560, p:42, c:55, g:18},
+  {n:"Pranzo", d:"120-150g riso/pasta + 180-200g carne o pesce + verdure + 2 cucchiai olio a crudo", kcal:720, p:48, c:80, g:22},
+  {n:"Spuntino pomeriggio", d:"200g yogurt greco + 60g fiocchi avena + 15g frutta secca + burro d'arachidi + miele", kcal:520, p:28, c:55, g:18},
+  {n:"Cena", d:"Carboidrato + 180-200g proteina + verdure + 1-2 cucchiai olio. Pane a piacere", kcal:680, p:45, c:70, g:22},
+  {n:"Prima di dormire (opz.)", d:"200g yogurt greco o ricotta, se fatichi a chiudere le calorie", kcal:180, p:20, c:8, g:6},
+];
+
+const QUICK = [
+  {n:"Shaker proteine + latte", kcal:300, p:32, c:24, g:8},
+  {n:"Uovo intero", kcal:78, p:6, c:0, g:5},
+  {n:"Banana", kcal:105, p:1, c:27, g:0},
+  {n:"Cucchiaio olio", kcal:135, p:0, c:0, g:15},
+  {n:"30g frutta secca", kcal:180, p:6, c:6, g:16},
+  {n:"Burro arachidi (cucch.)", kcal:95, p:4, c:3, g:8},
+  {n:"100g riso (crudo)", kcal:355, p:7, c:78, g:1},
+  {n:"150g pollo", kcal:248, p:46, c:0, g:6},
+  {n:"200g yogurt greco", kcal:130, p:18, c:7, g:4},
+];
+
+const DEFAULT_GOALS = {kcal:3200, p:160, c:400, g:88};
+
+/* ============================================================
+   STATO + PERSISTENZA (localStorage, no cloud)
+   ============================================================ */
+const KEY="pianomassa_v1";
+function todayKey(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+let DB = load();
+function load(){
+  try{const r=localStorage.getItem(KEY);if(r)return JSON.parse(r);}catch(e){}
+  return {goals:{...DEFAULT_GOALS}, days:{}, weights:[], lastLog:{}};
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(DB));}catch(e){toast("Memoria piena o bloccata");}}
+function today(){
+  const k=todayKey();
+  if(!DB.days[k]) DB.days[k]={extra:[], meals:{}, ex:{}};
+  return DB.days[k];
+}
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+function fmt(n){return Math.round(n);}
+function totals(){
+  const d=today();let t={kcal:0,p:0,c:0,g:0};
+  MEALS.forEach((m,i)=>{if(d.meals[i]){t.kcal+=m.kcal;t.p+=m.p;t.c+=m.c;t.g+=m.g;}});
+  d.extra.forEach(e=>{t.kcal+=e.kcal;t.p+=e.p;t.c+=e.c;t.g+=e.g;});
+  return t;
+}
+function renderDash(){
+  const g=DB.goals,t=totals();
+  document.getElementById("kcalGoal").textContent=g.kcal;
+  document.getElementById("kcalNow").textContent=fmt(t.kcal);
+  document.getElementById("kcalTarget").textContent="obiettivo "+g.kcal+" kcal";
+  const C=326.7, pct=Math.min(t.kcal/g.kcal,1);
+  document.getElementById("kcalRing").style.strokeDashoffset=C*(1-pct);
+  const mac=[["p","pNow","pBar","pGoal",t.p,g.p],["c","cNow","cBar","cGoal",t.c,g.c],["g","gNow","gBar","gGoal",t.g,g.g]];
+  mac.forEach(([k,nowId,barId,goalId,val,goal])=>{
+    document.getElementById(nowId).textContent=fmt(val);
+    document.getElementById(goalId).textContent=goal;
+    document.getElementById(barId).style.width=Math.min(val/goal*100,100)+"%";
+  });
+  // quick chips
+  const cc=document.getElementById("quickChips");cc.innerHTML="";
+  QUICK.forEach((q,i)=>{
+    const el=document.createElement("div");el.className="chip";
+    el.innerHTML=q.n+' <span class="k num">+'+q.kcal+'</span>';
+    el.onclick=()=>{today().extra.push({...q});save();renderDash();toast("+"+q.kcal+" kcal");};
+    cc.appendChild(el);
+  });
+  // today's workout summary
+  renderTodayWorkout();
+}
+function renderTodayWorkout(){
+  const box=document.getElementById("todayWorkout");
+  const wd=new Date().getDay();const key=DAY_MAP[wd];
+  if(!key){box.innerHTML='<div class="empty">Oggi è giorno di riposo 💤<br>Recupero e passeggiate. Il muscolo cresce ora.</div>';return;}
+  const w=WORKOUTS[key],d=today();
+  const done=w.ex.filter((_,i)=>d.ex[key+i]).length;
+  let html='<div class="card-hd"><span style="font-size:15px;font-weight:700;">'+w.label.split(" · ")[1]+' — Full body</span><span class="h-date"><span class="num">'+done+'</span>/'+w.ex.length+'</span></div>';
+  html+='<div style="margin-top:4px;">';
+  w.ex.forEach((e,i)=>{
+    const on=d.ex[key+i];
+    html+='<div class="meal" style="padding:11px 0;"><div class="check'+(on?' on':'')+'" data-tw="'+key+i+'"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>'
+      +'<div class="meal-body"><div class="meal-name'+(on?' done':'')+'" style="font-size:14px;">'+e.n+'</div><div class="meal-kcal">'+e.s+'</div></div></div>';
+  });
+  html+='</div><button class="reset-day" style="margin-top:12px;" onclick="goTab(\'allena\')">Apri scheda completa →</button>';
+  box.innerHTML=html;
+  box.querySelectorAll("[data-tw]").forEach(el=>{
+    el.onclick=()=>{const id=el.dataset.tw;const dd=today();dd.ex[id]=!dd.ex[id];save();renderDash();renderWorkout();};
+  });
+}
+
+let currentDay = DAY_MAP[new Date().getDay()] || "A";
+function renderDayTabs(){
+  const tt=document.getElementById("dayTabs");tt.innerHTML="";
+  Object.keys(WORKOUTS).forEach(k=>{
+    const el=document.createElement("div");el.className="day-tab"+(k===currentDay?" active":"");
+    el.textContent=WORKOUTS[k].label;
+    el.onclick=()=>{currentDay=k;renderWorkout();};
+    tt.appendChild(el);
+  });
+}
+function renderWorkout(){
+  renderDayTabs();
+  const w=WORKOUTS[currentDay],d=today();
+  document.getElementById("dayTip").innerHTML=w.tip;
+  const list=document.getElementById("exerciseList");list.innerHTML="";
+  w.ex.forEach((e,i)=>{
+    const id=currentDay+i;const on=d.ex[id];
+    const last=DB.lastLog[id];
+    const card=document.createElement("div");card.className="ex";
+    card.innerHTML=
+      '<div class="ex-hd"><div class="ex-check'+(on?' on':'')+'"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>'
+      +'<div class="ex-info"><div class="ex-name'+(on?' done':'')+'">'+e.n+'</div><div class="ex-meta">'+e.s+'</div></div>'
+      +'<div class="ex-toggle">+</div></div>'
+      +'<div class="ex-detail"><div class="ex-detail-in"><div class="ex-note">'+e.note+'</div>'
+      +'<div class="logger">'
+      +'<div class="log-field"><label>Peso kg</label><input type="number" inputmode="decimal" class="lw" placeholder="'+(last?last.w:"–")+'"></div>'
+      +'<div class="log-field"><label>Ripetizioni</label><input type="number" inputmode="numeric" class="lr" placeholder="'+(last?last.r:"–")+'"></div>'
+      +'<button class="btn" style="padding:0 16px;align-self:flex-end;height:44px;">Salva</button>'
+      +'</div>'
+      +'<div class="last-time">'+(last?('Ultima volta: <b>'+last.w+' kg × '+last.r+'</b> · '+last.date):'Nessun dato precedente — segna oggi per confrontarti la prossima volta')+'</div>'
+      +'</div></div>';
+    // toggle check
+    card.querySelector(".ex-check").onclick=(ev)=>{ev.stopPropagation();d.ex[id]=!d.ex[id];save();renderWorkout();renderDash();};
+    // expand
+    card.querySelector(".ex-hd").onclick=()=>card.classList.toggle("open");
+    card.querySelector(".ex-check").parentElement.querySelector(".ex-check").addEventListener("click",e2=>e2.stopPropagation());
+    // log save
+    card.querySelector(".btn").onclick=(ev)=>{
+      ev.stopPropagation();
+      const w_=card.querySelector(".lw").value, r_=card.querySelector(".lr").value;
+      if(!w_&&!r_){toast("Inserisci peso o ripetizioni");return;}
+      DB.lastLog[id]={w:w_||"–",r:r_||"–",date:new Date().toLocaleDateString("it-IT",{day:"2-digit",month:"2-digit"})};
+      d.ex[id]=true;save();renderWorkout();renderDash();toast("Registrato 💪");
+    };
+    list.appendChild(card);
+  });
+}
+
+function renderMeals(){
+  const d=today();const list=document.getElementById("mealList");list.innerHTML="";
+  let done=0;
+  MEALS.forEach((m,i)=>{
+    const on=d.meals[i];if(on)done++;
+    const el=document.createElement("div");el.className="meal";
+    el.innerHTML='<div class="check'+(on?' on':'')+'"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>'
+      +'<div class="meal-body"><div class="meal-name'+(on?' done':'')+'">'+m.n+'</div>'
+      +'<div class="meal-desc">'+m.d+'</div>'
+      +'<div class="meal-kcal">'+m.kcal+' kcal · P '+m.p+' · C '+m.c+' · G '+m.g+'</div></div>';
+    el.querySelector(".check").onclick=()=>{d.meals[i]=!d.meals[i];save();renderMeals();renderDash();};
+    list.appendChild(el);
+  });
+  document.getElementById("mealsDone").textContent=done;
+}
+
+function weeklyAvg(arr){if(!arr.length)return null;const last7=arr.slice(-7);return last7.reduce((a,b)=>a+b.kg,0)/last7.length;}
+function renderWeight(){
+  const arr=DB.weights;
+  const latest=arr.length?arr[arr.length-1].kg:null;
+  document.getElementById("weightLatest").textContent=latest!=null?latest.toFixed(1):"—";
+  // trend: confronto media ultimi 7 con 7 precedenti
+  const tEl=document.getElementById("weightTrend");
+  if(arr.length>=4){
+    const recent=arr.slice(-7),prev=arr.slice(-14,-7);
+    const ra=recent.reduce((a,b)=>a+b.kg,0)/recent.length;
+    if(prev.length){
+      const pa=prev.reduce((a,b)=>a+b.kg,0)/prev.length;
+      const diff=ra-pa;
+      const cls=diff>0.05?"up":diff<-0.05?"down":"flat";
+      tEl.className="trend "+cls;
+      const sign=diff>0?"+":"";
+      tEl.innerHTML="Media settimana: <b>"+ra.toFixed(1)+" kg</b> · "+sign+diff.toFixed(2)+" kg vs settimana prima "
+        +(cls==="up"?"📈 stai crescendo":cls==="down"?"⚠️ in calo: aumenta le calorie":"➡️ fermo: +200 kcal/die");
+    }else{
+      tEl.className="trend flat";
+      tEl.innerHTML="Media corrente: <b>"+ra.toFixed(1)+" kg</b> · continua a pesarti per vedere il trend";
+    }
+  }else if(arr.length){
+    tEl.className="trend flat";tEl.textContent="Continua a pesarti ogni mattina: servono ~1-2 settimane per un trend affidabile";
+  }
+  drawChart(arr);
+  // log
+  const lg=document.getElementById("weightLog");
+  if(!arr.length){lg.innerHTML='<div class="empty">Nessuna pesata ancora.<br>La prima crea il tuo punto di partenza.</div>';}
+  else{
+    lg.innerHTML="";
+    [...arr].reverse().slice(0,30).forEach((w)=>{
+      const realIdx=arr.indexOf(w);
+      const row=document.createElement("div");row.className="wlog";
+      row.innerHTML='<span class="d num">'+w.date+'</span><span class="w num">'+w.kg.toFixed(1)+' kg</span>';
+      const del=document.createElement("button");del.textContent="×";
+      del.onclick=()=>{arr.splice(realIdx,1);save();renderWeight();};
+      row.appendChild(del);lg.appendChild(row);
+    });
+  }
+}
+function drawChart(arr){
+  const svg=document.getElementById("weightChart");svg.innerHTML="";
+  if(arr.length<2){return;}
+  const data=arr.slice(-30);
+  const W=320,H=150,pad=20;
+  const ws=data.map(d=>d.kg);
+  let min=Math.min(...ws),max=Math.max(...ws);
+  if(max-min<1){const m=(max+min)/2;min=m-0.8;max=m+0.8;}
+  const x=i=>pad+(i/(data.length-1))*(W-pad*1.5);
+  const y=v=>H-pad-((v-min)/(max-min))*(H-pad*2);
+  // grid baseline
+  let path="",area="";
+  data.forEach((d,i)=>{path+=(i?"L":"M")+x(i).toFixed(1)+" "+y(d.kg).toFixed(1)+" ";});
+  area=path+"L"+x(data.length-1).toFixed(1)+" "+(H-pad)+" L"+x(0).toFixed(1)+" "+(H-pad)+" Z";
+  const ns="http://www.w3.org/2000/svg";
+  const grad='<defs><linearGradient id="wg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e8ff3a" stop-opacity="0.25"/><stop offset="1" stop-color="#e8ff3a" stop-opacity="0"/></linearGradient></defs>';
+  svg.innerHTML=grad
+    +'<path d="'+area+'" fill="url(#wg)"/>'
+    +'<path d="'+path+'" fill="none" stroke="#e8ff3a" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>';
+  data.forEach((d,i)=>{
+    if(i===data.length-1||i===0){
+      const c=document.createElementNS(ns,"circle");
+      c.setAttribute("cx",x(i));c.setAttribute("cy",y(d.kg));c.setAttribute("r",3.5);
+      c.setAttribute("fill",i===data.length-1?"#e8ff3a":"#5b6478");svg.appendChild(c);
+    }
+  });
+  const tmax=document.createElementNS(ns,"text");tmax.setAttribute("x",2);tmax.setAttribute("y",pad);tmax.textContent=max.toFixed(1);svg.appendChild(tmax);
+  const tmin=document.createElementNS(ns,"text");tmin.setAttribute("x",2);tmin.setAttribute("y",H-pad+4);tmin.textContent=min.toFixed(1);svg.appendChild(tmin);
+}
+
+/* ============================================================
+   TAB BAR + NAVIGAZIONE
+   ============================================================ */
+const TABS=[
+  {id:"oggi",label:"Oggi",icon:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'},
+  {id:"allena",label:"Allena",icon:'<path d="M6 7v10M18 7v10M4 9h4M16 9h4M8 12h8"/>'},
+  {id:"dieta",label:"Dieta",icon:'<path d="M6 3v7a3 3 0 0 0 6 0V3M9 3v18M18 3c-1.5 1-2 3-2 6s.5 5 2 6V3z"/>'},
+  {id:"peso",label:"Peso",icon:'<path d="M4 19h16M6 19V9l6-4 6 4v10"/><path d="M9 19v-5h6v5"/>'},
+  {id:"impo",label:"Setup",icon:'<circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.3 1a7 7 0 0 0-1.7-1l-.3-2.5H9.4l-.3 2.5a7 7 0 0 0-1.7 1l-2.3-1-2 3.4 2 1.5a7 7 0 0 0 0 2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 1.7 1l.3 2.5h5.2l.3-2.5a7 7 0 0 0 1.7-1l2.3 1 2-3.4-2-1.5c.1-.3.1-.7.1-1z"/>'},
+];
+function buildTabs(){
+  const nav=document.getElementById("tabbar");nav.innerHTML="";
+  TABS.forEach(t=>{
+    const el=document.createElement("div");el.className="tab"+(t.id==="oggi"?" active":"");el.dataset.tab=t.id;
+    el.innerHTML='<svg viewBox="0 0 24 24">'+t.icon+'</svg><span>'+t.label+'</span>';
+    el.onclick=()=>goTab(t.id);
+    nav.appendChild(el);
+  });
+}
+function goTab(id){
+  document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id==="view-"+id));
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t.dataset.tab===id));
+  window.scrollTo(0,0);
+  if(id==="oggi")renderDash();
+  if(id==="allena")renderWorkout();
+  if(id==="dieta")renderMeals();
+  if(id==="peso")renderWeight();
+}
+window.goTab=goTab;
+
+/* ============================================================
+   TOAST + EVENTI
+   ============================================================ */
+let toastT;
+function toast(msg){const el=document.getElementById("toast");el.textContent=msg;el.classList.add("show");
+  clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove("show"),1600);}
+
+document.getElementById("addWeight").onclick=()=>{
+  const inp=document.getElementById("weightInput");const v=parseFloat(inp.value.replace(",","."));
+  if(isNaN(v)||v<30||v>250){toast("Inserisci un peso valido");return;}
+  const date=new Date().toLocaleDateString("it-IT",{day:"2-digit",month:"2-digit"});
+  // se già pesato oggi, sovrascrivi
+  const tk=todayKey();
+  const existing=DB.weights.find(w=>w.key===tk);
+  if(existing){existing.kg=v;}else{DB.weights.push({kg:v,date:date,key:tk});}
+  inp.value="";save();renderWeight();toast("Peso salvato");
+};
+document.getElementById("resetWorkout").onclick=()=>{today().ex={};save();renderWorkout();renderDash();toast("Spunte azzerate");};
+document.getElementById("resetMeals").onclick=()=>{const d=today();d.meals={};d.extra=[];save();renderMeals();renderDash();toast("Giornata azzerata");};
+
+document.getElementById("saveGoals").onclick=()=>{
+  DB.goals={kcal:+document.getElementById("setKcal").value||DEFAULT_GOALS.kcal,
+    p:+document.getElementById("setP").value||DEFAULT_GOALS.p,
+    c:+document.getElementById("setC").value||DEFAULT_GOALS.c,
+    g:+document.getElementById("setG").value||DEFAULT_GOALS.g};
+  save();renderDash();toast("Obiettivi salvati");
+};
+// export / import
+document.getElementById("exportBtn").onclick=()=>{
+  const blob=new Blob([JSON.stringify(DB)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);const a=document.createElement("a");
+  a.href=url;a.download="pianomassa-backup-"+todayKey()+".json";a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);toast("Backup esportato");
+};
+document.getElementById("importBtn").onclick=()=>document.getElementById("importFile").click();
+document.getElementById("importFile").onchange=(e)=>{
+  const f=e.target.files[0];if(!f)return;const rd=new FileReader();
+  rd.onload=()=>{try{const obj=JSON.parse(rd.result);if(obj.goals&&obj.days){DB=obj;save();initFields();goTab("oggi");toast("Backup importato");}else toast("File non valido");}catch(x){toast("File non valido");}};
+  rd.readAsText(f);
+};
+document.getElementById("wipeBtn").onclick=()=>{
+  if(confirm("Cancellare tutti i dati? Operazione irreversibile. Esporta prima un backup se vuoi conservarli.")){
+    localStorage.removeItem(KEY);DB=load();initFields();goTab("oggi");toast("Dati cancellati");
+  }
+};
+
+function initFields(){
+  document.getElementById("setKcal").value=DB.goals.kcal;
+  document.getElementById("setP").value=DB.goals.p;
+  document.getElementById("setC").value=DB.goals.c;
+  document.getElementById("setG").value=DB.goals.g;
+}
+function setHeader(){
+  const d=new Date();
+  const giorni=["Domenica","Lunedì","Martedì","Mercoledì","Giovedì","Venerdì","Sabato"];
+  const mesi=["gen","feb","mar","apr","mag","giu","lug","ago","set","ott","nov","dic"];
+  document.getElementById("dateLabel").textContent=d.getDate()+" "+mesi[d.getMonth()];
+  const wd=d.getDay();const key=DAY_MAP[wd];
+  const greet=key?("Oggi è giorno <span class='lime'>"+key+"</span>"):"Oggi è <span class='lime'>riposo</span>";
+  document.getElementById("headerMain").innerHTML=giorni[wd]+" — "+greet;
+}
+
+/* INIT */
+buildTabs();setHeader();initFields();renderDash();
+// previeni zoom doppio tap su input chiudendo tastiera con scroll
+document.addEventListener("gesturestart",e=>e.preventDefault());
+</script>
 </body>
 </html>
