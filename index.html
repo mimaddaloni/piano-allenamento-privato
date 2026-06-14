@@ -301,9 +301,10 @@ const DAY_MAP={1:"A",3:"B",5:"C"};
 const KEY="pianoallena_v2";
 function todayKey(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 let DB=load();
+if(!DB.hist)DB.hist={};
 function load(){
   try{const r=localStorage.getItem(KEY);if(r)return JSON.parse(r);}catch(e){}
-  return {rest:{heavy:120,light:60}, days:{}, weights:[], lastLog:{}};
+  return {rest:{heavy:120,light:60}, days:{}, weights:[], lastLog:{}, hist:{}};
 }
 function save(){try{localStorage.setItem(KEY,JSON.stringify(DB));}catch(e){toast("Memoria bloccata");}}
 function today(){const k=todayKey();if(!DB.days[k])DB.days[k]={sets:{}};return DB.days[k];}
@@ -457,6 +458,7 @@ function renderWorkout(){
       +'<div class="ex-note">'+e.note+'</div>'
       +(last&&last.best?'<div class="last-hint">Ultima volta: <b>'+last.best+'</b> · '+last.date+'</div>':'<div class="last-hint">Prima volta su questo esercizio — i numeri di oggi diventano il tuo riferimento.</div>')
       +setsHtml
+      +strengthSpark(id)
       +'</div></div>';
     // expand
     card.querySelector(".ex-hd").onclick=(ev)=>{if(ev.target.closest(".set"))return;card.classList.toggle("open");};
@@ -495,6 +497,43 @@ function updateLastLog(id,name){
   doneSets.forEach(s=>{const bw=parseFloat(s.w)||0,bb=parseFloat(best.w)||0;if(bw>bb)best=s;else if(bw===bb&&(parseFloat(s.r)||0)>(parseFloat(best.r)||0))best=s;});
   const bestStr=(best.w?best.w+" kg × ":"")+(best.r||"?")+(best.w?"":" rip");
   DB.lastLog[id]={name:name, best:bestStr, sets:sets.map(s=>({w:s.w,r:s.r})), date:new Date().toLocaleDateString("it-IT",{day:"2-digit",month:"2-digit"}), ts:Date.now()};
+  // ---- storico per grafico forza-nel-tempo ----
+  // metrica: se l'esercizio usa peso -> miglior peso; altrimenti -> ripetizioni totali della giornata
+  const usesWeight=doneSets.some(s=>parseFloat(s.w)>0);
+  let val, unit;
+  if(usesWeight){ val=parseFloat(best.w)||0; unit="kg"; }
+  else { val=doneSets.reduce((a,s)=>a+(parseFloat(s.r)||0),0); unit="rip tot"; }
+  if(!DB.hist[id])DB.hist[id]=[];
+  const tk=todayKey();
+  const existing=DB.hist[id].find(h=>h.key===tk);
+  if(existing){ existing.val=val; existing.unit=unit; }
+  else { DB.hist[id].push({key:tk, val:val, unit:unit, date:new Date().toLocaleDateString("it-IT",{day:"2-digit",month:"2-digit"})}); }
+}
+// sparkline SVG per la forza nel tempo di un esercizio
+function strengthSpark(id){
+  const h=DB.hist[id];
+  if(!h||h.length<2) return "";
+  const data=h.slice(-12);
+  const vals=data.map(d=>d.val);
+  let min=Math.min(...vals),max=Math.max(...vals);
+  if(max===min){min=min-1;max=max+1;}
+  const W=288,H=70,pad=8;
+  const x=i=>pad+(i/(data.length-1))*(W-pad*2);
+  const y=v=>H-pad-((v-min)/(max-min))*(H-pad*2);
+  let path="";data.forEach((d,i)=>{path+=(i?"L":"M")+x(i).toFixed(1)+" "+y(d.val).toFixed(1)+" ";});
+  const first=data[0].val, last=data[data.length-1].val, unit=data[data.length-1].unit;
+  const up=last>first, same=last===first;
+  const delta=(up?"+":"")+(last-first).toFixed(unit==="kg"?1:0);
+  const col=up?"var(--good)":same?"var(--muted)":"var(--warn)";
+  let dots="";data.forEach((d,i)=>{if(i===data.length-1)dots+='<circle cx="'+x(i).toFixed(1)+'" cy="'+y(d.val).toFixed(1)+'" r="3" fill="'+col+'"/>';});
+  return '<div style="border-top:1px solid var(--line);padding-top:12px;margin-top:2px;">'
+    +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">'
+    +'<span style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--faint);font-weight:700;">Forza nel tempo</span>'
+    +'<span style="font-size:12px;font-weight:700;color:'+col+';" class="num">'+(same?"stabile":delta+" "+unit)+'</span></div>'
+    +'<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:60px;" preserveAspectRatio="none">'
+    +'<path d="'+path+'" fill="none" stroke="'+col+'" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>'+dots+'</svg>'
+    +'<div style="font-size:11px;color:var(--faint);text-align:center;margin-top:4px;" class="num">'+data.length+' sessioni · da '+data[0].date+' a '+data[data.length-1].date+'</div>'
+    +'</div>';
 }
 document.getElementById("resetWorkout").onclick=()=>{
   const d=today();const w=WORKOUTS[currentDay];
@@ -565,7 +604,7 @@ document.getElementById("exportBtn").onclick=()=>{
 document.getElementById("importBtn").onclick=()=>document.getElementById("importFile").click();
 document.getElementById("importFile").onchange=(e)=>{
   const f=e.target.files[0];if(!f)return;const rd=new FileReader();
-  rd.onload=()=>{try{const o=JSON.parse(rd.result);if(o.days&&o.rest){DB=o;save();initFields();goTab("oggi");toast("Backup importato");}else toast("File non valido");}catch(x){toast("File non valido");}};
+  rd.onload=()=>{try{const o=JSON.parse(rd.result);if(o.days&&o.rest){if(!o.hist)o.hist={};DB=o;save();initFields();goTab("oggi");toast("Backup importato");}else toast("File non valido");}catch(x){toast("File non valido");}};
   rd.readAsText(f);
 };
 document.getElementById("wipeBtn").onclick=()=>{if(confirm("Cancellare tutti i dati? Irreversibile. Esporta prima un backup.")){localStorage.removeItem(KEY);DB=load();initFields();goTab("oggi");toast("Dati cancellati");}};
