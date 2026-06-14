@@ -240,6 +240,44 @@
   .qty-val .num{font-size:34px;font-weight:800;letter-spacing:-.02em;}
   .qty-unit{display:block;font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin-top:2px;}
   .qty-macros{text-align:center;font-size:13px;color:var(--muted);padding:8px 20px 0;}
+  /* swap esercizio */
+  .ex-swap-bar{display:flex;justify-content:space-between;align-items:center;padding:9px 0;margin-bottom:4px;
+    border-bottom:1px solid var(--line);cursor:pointer;}
+  .ex-swap-bar>span:first-child{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--faint);font-weight:700;}
+  .ex-swap-act{font-size:12px;font-weight:700;color:var(--accent-dim);}
+  /* reminder card */
+  .rem-row{display:flex;align-items:center;gap:13px;padding:13px 0;border-bottom:1px solid var(--line);}
+  .rem-row:last-child{border-bottom:none;}
+  .rem-ico{width:38px;height:38px;border-radius:10px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;}
+  .rem-body{flex:1;}
+  .rem-title{font-size:14.5px;font-weight:600;}
+  .rem-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+  .water-dots{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px;}
+  .water-dot{width:24px;height:30px;border-radius:5px;border:2px solid var(--line);background:transparent;cursor:pointer;transition:all .15s;position:relative;}
+  .water-dot.on{background:var(--rest);border-color:var(--rest);}
+  .rem-check{width:40px;height:40px;border-radius:11px;border:2px solid var(--line);background:var(--surface2);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .15s;}
+  .rem-check svg{width:18px;height:18px;stroke:var(--faint);stroke-width:3;fill:none;}
+  .rem-check.on{background:var(--accent);border-color:var(--accent);}
+  .rem-check.on svg{stroke:#0f1115;}
+  .water-count{font-size:13px;font-weight:700;color:var(--rest);margin-left:auto;}
+  /* equip toggle (setup) */
+  .equip-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;}
+  .equip-chip{display:flex;align-items:center;gap:8px;padding:11px 14px;border-radius:11px;background:var(--surface2);
+    border:1px solid var(--line);font-size:13.5px;font-weight:600;cursor:pointer;transition:all .15s;}
+  .equip-chip.on{background:rgba(232,255,58,.12);border-color:var(--accent);color:var(--accent);}
+  .equip-chip.locked{opacity:.55;}
+  .equip-chip .ec{width:18px;height:18px;border-radius:5px;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;}
+  .equip-chip.on .ec{background:var(--accent);border-color:var(--accent);}
+  .equip-chip .ec svg{width:11px;height:11px;stroke:#0f1115;stroke-width:3.5;fill:none;}
+  /* form custom food */
+  .cf-form{display:flex;flex-direction:column;gap:10px;padding:4px 20px 0;}
+  .cf-form input,.cf-form select{background:var(--surface2);border:1px solid var(--line);border-radius:9px;color:var(--ink);padding:12px;font-size:15px;width:100%;}
+  .cf-form input:focus,.cf-form select:focus{outline:none;border-color:var(--accent);}
+  .cf-macros{display:flex;gap:8px;}
+  .cf-macros input{text-align:center;}
+  .cf-kcal{text-align:center;font-size:13px;color:var(--muted);padding:4px 0;}
+  .cf-kcal b{color:var(--accent-dim);}
 </style>
 </head>
 <body>
@@ -274,6 +312,9 @@
       </div>
     </div>
     <button class="btn" id="startToday" style="width:100%;padding:15px;font-size:16px;">Apri la scheda di oggi →</button>
+
+    <div class="section-label">Promemoria di oggi</div>
+    <div class="card" id="remindersCard"></div>
 
     <div class="section-label">Progressi recenti</div>
     <div class="card" id="recentProgress"></div>
@@ -334,6 +375,18 @@
 
   <!-- ============ SETUP ============ -->
   <section class="view" id="view-impo">
+    <div class="section-label">Attrezzatura disponibile</div>
+    <div class="tip">Spunta cosa hai. Negli esercizi (⇄ cambia esercizio) vedrai solo le alternative compatibili con la tua attrezzatura. Il corpo libero è sempre attivo.</div>
+    <div class="card"><div class="equip-grid" id="equipGrid"></div></div>
+
+    <div class="section-label">Promemoria acqua</div>
+    <div class="card">
+      <div class="field-row">
+        <div class="log-field"><label>Bicchieri al giorno</label><input type="number" inputmode="numeric" id="setWater"></div>
+      </div>
+      <button class="btn" id="saveWater" style="width:100%;margin-top:14px;padding:13px;">Salva</button>
+    </div>
+
     <div class="section-label">Tempo di recupero</div>
     <div class="tip">Quando spunti una serie, parte un timer di riposo automatico. Imposta qui i secondi di default.</div>
     <div class="card">
@@ -387,36 +440,89 @@
 "use strict";
 /* ===================== DATI PIANO ===================== */
 // reps: numero serie previste; tag heavy => usa tempo riposo "pesante"
+/* ===================== CATALOGO ESERCIZI =====================
+   Ogni esercizio: gruppo muscolare + attrezzatura richiesta (equip).
+   equip: lista di tag; l'esercizio è disponibile solo se TUTTI i suoi tag
+   sono tra quelli selezionati dall'utente. "corpo" = nessuna attrezzatura. */
+const EQUIP_ALL=[
+  {id:"corpo",n:"Corpo libero",always:true},
+  {id:"board",n:"Push-up board"},
+  {id:"zaino",n:"Zaino zavorrato"},
+  {id:"manubri",n:"Manubri"},
+  {id:"panca",n:"Panca"},
+  {id:"sbarra",n:"Sbarra trazioni"},
+];
+const GROUPS={gambe:"Gambe",glutei:"Glutei",petto:"Petto",schiena:"Schiena",spalle:"Spalle",braccia:"Braccia",core:"Core"};
+const EXERCISES={
+  // ---- GAMBE ----
+  squat_zaino:{n:"Squat con zaino", g:"gambe", equip:["zaino"], sets:4, rep:"8-12", heavy:true, note:"Schiena dritta, scendi a coscia parallela. Esercizio chiave per la massa."},
+  squat_lento:{n:"Squat zaino (4s discesa)", g:"gambe", equip:["zaino"], sets:4, rep:"8-12", heavy:true, note:"Discesa lentissima 4s: brucia di più senza aggiungere peso."},
+  squat_corpo:{n:"Squat a corpo libero", g:"gambe", equip:["corpo"], sets:4, rep:"15-25", note:"Senza peso: cura la tecnica e rallenta la discesa per renderlo più duro."},
+  bulgaro:{n:"Squat bulgaro con zaino", g:"gambe", equip:["zaino"], sets:4, rep:"8-10/gamba", heavy:true, note:"Piede dietro su rialzo. Durissimo ed efficace. Scendi controllato."},
+  bulgaro_corpo:{n:"Squat bulgaro a corpo libero", g:"gambe", equip:["corpo"], sets:3, rep:"12-15/gamba", note:"Piede dietro su sedia. Anche senza peso è impegnativo per l'equilibrio."},
+  affondi_zaino:{n:"Affondi con zaino", g:"gambe", equip:["zaino"], sets:3, rep:"10/gamba", note:"Passo lungo, ginocchio non oltre la punta. Busto eretto."},
+  affondi_camm:{n:"Affondi camminati con zaino", g:"gambe", equip:["zaino"], sets:3, rep:"12/gamba", note:"In avanti alternando. Poco spazio? Falli sul posto."},
+  affondi_corpo:{n:"Affondi a corpo libero", g:"gambe", equip:["corpo"], sets:3, rep:"15/gamba", note:"Alternati. Aumenta le ripetizioni per compensare l'assenza di peso."},
+  stacco_rumeno:{n:"Stacco rumeno con zaino", g:"gambe", equip:["zaino"], sets:3, rep:"10-12", note:"Gambe semi-tese, bacino indietro, senti il femorale. Schiena neutra."},
+  goblet_manubrio:{n:"Goblet squat con manubrio", g:"gambe", equip:["manubri"], sets:4, rep:"10-12", heavy:true, note:"Manubrio al petto, scendi profondo. Ottimo per quadricipiti."},
+  // ---- GLUTEI ----
+  hipthrust_zaino:{n:"Hip thrust con zaino", g:"glutei", equip:["zaino"], sets:3, rep:"12-15", note:"Spalle su rialzo, zaino sul bacino, spingi coi glutei e stringi in alto."},
+  ponte_unagamba:{n:"Ponte glutei a una gamba", g:"glutei", equip:["corpo"], sets:3, rep:"12/gamba", note:"Una gamba tesa, spingi con l'altra. Carico naturale sui glutei."},
+  ponte_glutei:{n:"Ponte glutei a corpo libero", g:"glutei", equip:["corpo"], sets:3, rep:"20-25", note:"Entrambi i piedi a terra, spingi il bacino in alto e stringi."},
+  // ---- PETTO ----
+  pushup_board_petto:{n:"Push-up board (presa petto)", g:"petto", equip:["board"], sets:4, rep:"max", heavy:true, note:"Maniglie nei fori petto. Discesa lenta, polsi protetti dalla presa neutra."},
+  pushup_board_larga:{n:"Push-up board (presa larga)", g:"petto", equip:["board"], sets:3, rep:"max", note:"Maniglie larghe: enfasi sul petto esterno."},
+  pushup_declinati:{n:"Push-up declinati", g:"petto", equip:["corpo"], sets:3, rep:"8-12", note:"Piedi su rialzo: più carico su parte alta del petto e spalle."},
+  pushup_classici:{n:"Push-up classici", g:"petto", equip:["corpo"], sets:4, rep:"max", note:"A terra. Se i polsi danno fastidio, usa la board o appoggi rialzati."},
+  panca_manubri:{n:"Distensioni su panca con manubri", g:"petto", equip:["manubri","panca"], sets:4, rep:"8-12", heavy:true, note:"Schiena aderente, scendi controllato, spingi senza bloccare i gomiti."},
+  // ---- SCHIENA ----
+  rematore_zaino:{n:"Rematore con zaino", g:"schiena", equip:["zaino"], sets:4, rep:"10-12", heavy:true, note:"Busto a ~45°, tira lo zaino verso l'ombelico. Stringi le scapole."},
+  rematore_manubri:{n:"Rematore con manubri", g:"schiena", equip:["manubri"], sets:4, rep:"10-12", heavy:true, note:"Un manubrio per mano, busto piegato. Tira verso i fianchi."},
+  trazioni:{n:"Trazioni alla sbarra", g:"schiena", equip:["sbarra"], sets:4, rep:"max", heavy:true, note:"Presa prona. Il miglior esercizio per la schiena se hai la sbarra."},
+  superman:{n:"Superman", g:"schiena", equip:["corpo"], sets:3, rep:"15", note:"Sdraiato a pancia in giù, solleva braccia e gambe. Catena posteriore."},
+  // ---- SPALLE ----
+  pike:{n:"Pike push-up", g:"spalle", equip:["corpo"], sets:3, rep:"6-12", note:"Bacino in alto a V, spingi con le spalle. Lavora i deltoidi."},
+  pike_rialzati:{n:"Pike push-up rialzati", g:"spalle", equip:["corpo"], sets:4, rep:"6-10", heavy:true, note:"Piedi su rialzo verso la verticale: più carico sulle spalle."},
+  lento_manubri:{n:"Lento avanti con manubri", g:"spalle", equip:["manubri"], sets:3, rep:"10-12", note:"In piedi o seduto, spingi i manubri sopra la testa. Core contratto."},
+  alzate_zaino:{n:"Alzate laterali (zaino/peso)", g:"spalle", equip:["zaino"], sets:3, rep:"12-15", note:"Usa maniglie dello zaino o bottiglie: solleva ai lati fino alle spalle."},
+  // ---- BRACCIA ----
+  pushup_board_stretta:{n:"Push-up board (presa stretta)", g:"braccia", equip:["board"], sets:4, rep:"max", note:"Maniglie vicine, gomiti al corpo: enfasi sui tricipiti."},
+  curl_zaino:{n:"Curl bicipiti con zaino", g:"braccia", equip:["zaino"], sets:3, rep:"12-15", note:"Impugna le maniglie dello zaino, fletti i gomiti. Per i bicipiti."},
+  curl_manubri:{n:"Curl con manubri", g:"braccia", equip:["manubri"], sets:3, rep:"10-12", note:"Un manubrio per mano, gomiti fermi, controlla la discesa."},
+  dip_sedia:{n:"Dip su sedia", g:"braccia", equip:["corpo"], sets:3, rep:"10-15", note:"Mani su sedia dietro di te, scendi piegando i gomiti. Tricipiti."},
+  // ---- CORE ----
+  plank:{n:"Plank", g:"core", equip:["corpo"], sets:3, rep:"30-60s", note:"Corpo in linea, addome contratto. Sui gomiti per salvare i polsi."},
+  plank_laterale:{n:"Plank laterale", g:"core", equip:["corpo"], sets:3, rep:"30s/lato", note:"Su un gomito, corpo in linea. Core obliquo."},
+  hollow:{n:"Hollow hold", g:"core", equip:["corpo"], sets:3, rep:"20-40s", note:"Schiena a terra aderente, gambe e spalle sollevate."},
+  crunch:{n:"Crunch", g:"core", equip:["corpo"], sets:3, rep:"15-20", note:"Solleva le scapole contraendo gli addominali, senza tirare il collo."},
+};
+// schede: ogni slot referenzia un esercizio; il gruppo determina le alternative per lo swap
 const WORKOUTS = {
   A:{label:"Lun · A", tip:"<b>Full-body A.</b> Usa sempre le maniglie della board (presa neutra) per i polsi. Lo squat è il movimento che costruisce più massa: dagli il meglio.",
-    ex:[
-      {n:"Squat con zaino zavorrato", sets:4, rep:"8-12", heavy:true, note:"Schiena dritta, scendi fino a coscia parallela. È il tuo esercizio chiave."},
-      {n:"Push-up board (presa petto)", sets:4, rep:"max", heavy:true, note:"Maniglie nei fori per il petto. Discesa lenta 2-3 sec, fermati 1-2 rip prima del cedimento."},
-      {n:"Affondi con zaino (alternati)", sets:3, rep:"10/gamba", note:"Passo lungo, ginocchio non oltre la punta del piede. Busto eretto."},
-      {n:"Pike push-up", sets:3, rep:"6-12", note:"Bacino in alto a V, spingi con le spalle. Lavora i deltoidi."},
-      {n:"Hip thrust a terra con zaino", sets:3, rep:"12-15", note:"Spalle a terra o su rialzo, zaino sul bacino, spingi coi glutei e stringi in alto."},
-      {n:"Plank", sets:3, rep:"30-60s", note:"Corpo in linea, addome contratto. Sui gomiti per salvare i polsi."},
-    ]},
+    slots:["squat_zaino","pushup_board_petto","affondi_zaino","pike","hipthrust_zaino","plank"]},
   B:{label:"Mer · B", tip:"<b>Full-body B.</b> Oggi c'è il rematore: l'unico vero lavoro di schiena della settimana, curalo. Tira lo zaino verso l'ombelico, non strappare.",
-    ex:[
-      {n:"Squat bulgaro con zaino", sets:4, rep:"8-10/gamba", heavy:true, note:"Piede dietro su sedia/divano. Duro ma fortissimo sulle gambe. Scendi controllato."},
-      {n:"Push-up board (presa stretta)", sets:4, rep:"max", heavy:true, note:"Maniglie vicine: enfasi sui tricipiti. Gomiti vicino al corpo."},
-      {n:"Rematore con zaino (busto piegato)", sets:4, rep:"10-12", heavy:true, note:"Busto a ~45°, schiena dritta, tira lo zaino verso l'ombelico. Stringi le scapole in alto."},
-      {n:"Stacco rumeno con zaino", sets:3, rep:"10-12", note:"Gambe semi-tese, spingi il bacino indietro, senti il femorale. Schiena neutra."},
-      {n:"Push-up declinati (piedi rialzati)", sets:3, rep:"8-12", note:"Piedi su sedia: più carico sulla parte alta del petto e spalle."},
-      {n:"Hollow hold", sets:3, rep:"20-40s", note:"Schiena a terra aderente, gambe e spalle sollevate. Core."},
-    ]},
-  C:{label:"Ven · C", tip:"<b>Full-body C.</b> Oggi giochi col tempo: discese lentissime per rendere tutto più duro senza aggiungere peso. Trucco prezioso quando non puoi caricare di più.",
-    ex:[
-      {n:"Squat con zaino (4s discesa)", sets:4, rep:"8-12", heavy:true, note:"Scendi in 4 secondi pieni, risali normale. Brucia molto di più a parità di peso."},
-      {n:"Pike push-up rialzati", sets:4, rep:"6-10", heavy:true, note:"Piedi su rialzo, avvicinandoti alla verticale: più carico sulle spalle."},
-      {n:"Affondi camminati con zaino", sets:3, rep:"12/gamba", note:"In avanti alternando. Se hai poco spazio, falli sul posto."},
-      {n:"Push-up board (presa larga)", sets:3, rep:"max", note:"Maniglie larghe: enfasi sul petto esterno."},
-      {n:"Ponte glutei a una gamba", sets:3, rep:"12/gamba", note:"Una gamba tesa in aria, spingi con l'altra. Carico naturale sui glutei."},
-      {n:"Superman + Plank laterale", sets:3, rep:"30s", note:"Catena posteriore (superman) e core obliquo (plank laterale per lato)."},
-    ]},
+    slots:["bulgaro","pushup_board_stretta","rematore_zaino","stacco_rumeno","pushup_declinati","hollow"]},
+  C:{label:"Ven · C", tip:"<b>Full-body C.</b> Oggi giochi col tempo: discese lentissime per rendere tutto più duro senza aggiungere peso.",
+    slots:["squat_lento","pike_rialzati","affondi_camm","pushup_board_larga","ponte_unagamba","superman"]},
 };
 const DAY_MAP={1:"A",3:"B",5:"C"};
+// attrezzatura disponibile (default: ciò che l'utente ha ora). "corpo" sempre attivo.
+function availEquip(){
+  if(!DB.equip)DB.equip=["corpo","board","zaino"];
+  if(!DB.equip.includes("corpo"))DB.equip.push("corpo");
+  return DB.equip;
+}
+// esercizio disponibile? tutti i suoi tag equip devono essere selezionati
+function exAvailable(exId){
+  const ex=EXERCISES[exId];if(!ex)return false;
+  const av=availEquip();
+  return ex.equip.every(t=>av.includes(t));
+}
+// alternative dello stesso gruppo muscolare, filtrate per attrezzatura disponibile
+function exAlternatives(exId){
+  const ex=EXERCISES[exId];if(!ex)return [];
+  return Object.keys(EXERCISES).filter(k=>EXERCISES[k].g===ex.g && exAvailable(k));
+}
 
 /* ===================== DATI DIETA (dispensa + varianti componibili) =====================
    FOODS: dispensa con macro per 100g (o per unità). u = unità di misura mostrata.
@@ -567,17 +673,36 @@ function todayKey(){const d=new Date();return d.getFullYear()+"-"+String(d.getMo
 let DB=load();
 if(!DB.hist)DB.hist={};
 if(!DB.diet)DB.diet={};
+if(!DB.equip)DB.equip=["corpo","board","zaino"];
+if(!DB.reminders)DB.reminders={water:8, creatine:true};
+if(!DB.custom)DB.custom={};
+// unisci alimenti personalizzati salvati dall'utente nella dispensa
+Object.keys(DB.custom).forEach(id=>{ if(!FOODS[id]) FOODS[id]=DB.custom[id]; });
 function load(){
   try{const r=localStorage.getItem(KEY);if(r)return JSON.parse(r);}catch(e){}
   return {rest:{heavy:120,light:60}, days:{}, weights:[], lastLog:{}, hist:{}, diet:{}};
 }
 function save(){try{localStorage.setItem(KEY,JSON.stringify(DB));}catch(e){toast("Memoria bloccata");}}
-function today(){const k=todayKey();if(!DB.days[k])DB.days[k]={sets:{}};return DB.days[k];}
-// sets stored as DB.days[k].sets[exId] = [{w,r,done}, ...]
-function exSets(dayKey,exIdx){
-  const d=today();const id=dayKey+exIdx;
+function today(){const k=todayKey();if(!DB.days[k])DB.days[k]={sets:{},slots:{}};if(!DB.days[k].slots)DB.days[k].slots={};return DB.days[k];}
+// esercizi scelti oggi per la scheda: default dalla scheda, con fallback se l'attrezzatura non c'è
+function daySlots(dayKey){
+  const d=today();
+  if(!d.slots[dayKey]){
+    d.slots[dayKey]=WORKOUTS[dayKey].slots.map(exId=>{
+      if(exAvailable(exId))return exId;
+      // fallback: prima alternativa disponibile dello stesso gruppo
+      const alt=exAlternatives(exId)[0];
+      return alt||exId;
+    });
+  }
+  return d.slots[dayKey];
+}
+// sets per slot del giorno; chiave include data+scheda+slot
+function exSets(dayKey,slotIdx){
+  const d=today();const id=dayKey+":"+slotIdx;
+  const exId=daySlots(dayKey)[slotIdx];
   if(!d.sets[id]){
-    const n=WORKOUTS[dayKey].ex[exIdx].sets;
+    const n=EXERCISES[exId]?EXERCISES[exId].sets:3;
     d.sets[id]=Array.from({length:n},()=>({w:"",r:"",done:false}));
   }
   return d.sets[id];
@@ -627,7 +752,7 @@ document.getElementById("restSkip").onclick=stopRest;
 /* ===================== OGGI ===================== */
 function dayDone(dayKey){
   const d=today();let total=0,done=0;
-  WORKOUTS[dayKey].ex.forEach((e,i)=>{
+  daySlots(dayKey).forEach((exId,i)=>{
     const sets=exSets(dayKey,i);total+=sets.length;done+=sets.filter(s=>s.done).length;
   });
   return {total,done};
@@ -654,12 +779,44 @@ function renderOggi(){
     document.getElementById("dayPct").textContent=pct+"%";
     document.getElementById("dayRing").style.strokeDashoffset=C*(1-pct/100);
     countEl.textContent=done+"/"+total+" serie";
-    const remaining=w.ex.length;
-    sideEl.innerHTML='<div class="big">'+w.ex.length+' esercizi · '+total+' serie</div><div class="sub">'+(done===0?"Non ancora iniziato. Quando spunti una serie parte il timer di recupero.":done===total?"Sessione completata 💪 Bel lavoro.":"In corso: "+done+" serie fatte, continua.")+'</div>';
+    const nEx=daySlots(key).length;
+    sideEl.innerHTML='<div class="big">'+nEx+' esercizi · '+total+' serie</div><div class="sub">'+(done===0?"Non ancora iniziato. Quando spunti una serie parte il timer di recupero.":done===total?"Sessione completata 💪 Bel lavoro.":"In corso: "+done+" serie fatte, continua.")+'</div>';
     startBtn.textContent=done===0?"Inizia la scheda di oggi →":done===total?"Rivedi la scheda →":"Riprendi la scheda →";
     startBtn.onclick=()=>{currentDay=key;goTab("allena");};
   }
   renderRecent();
+  renderReminders();
+}
+// ---- PROMEMORIA acqua + creatina ----
+function remToday(){
+  const k=todayKey();const d=today();
+  if(!d.rem)d.rem={water:0, creatine:false};
+  return d.rem;
+}
+function renderReminders(){
+  const box=document.getElementById("remindersCard");if(!box)return;
+  const r=remToday();const goal=(DB.reminders&&DB.reminders.water)||8;
+  let html="";
+  // acqua
+  html+='<div class="rem-row"><div class="rem-ico">💧</div>'
+    +'<div class="rem-body"><div class="rem-title">Acqua</div>'
+    +'<div class="rem-sub">Obiettivo '+goal+' bicchieri (~'+(goal*0.25).toFixed(1).replace(".0","")+' L). Per la massa l\'idratazione conta.</div>'
+    +'<div class="water-dots" id="waterDots"></div></div>'
+    +'<div class="water-count num">'+r.water+'/'+goal+'</div></div>';
+  // creatina
+  html+='<div class="rem-row"><div class="rem-ico">💊</div>'
+    +'<div class="rem-body"><div class="rem-title">Creatina</div>'
+    +'<div class="rem-sub">3-5 g oggi'+(r.creatine?' · presa ✓':' · ancora da prendere')+'. Tutti i giorni, anche di riposo.</div></div>'
+    +'<div class="rem-check'+(r.creatine?' on':'')+'" id="cretToggle"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div></div>';
+  box.innerHTML=html;
+  // dots acqua
+  const dots=document.getElementById("waterDots");
+  for(let i=0;i<goal;i++){
+    const dot=document.createElement("div");dot.className="water-dot"+(i<r.water?" on":"");
+    dot.onclick=()=>{ r.water = (i+1===r.water)? i : i+1; save(); renderReminders(); };
+    dots.appendChild(dot);
+  }
+  document.getElementById("cretToggle").onclick=()=>{r.creatine=!r.creatine;save();renderReminders();toast(r.creatine?"Creatina ✓":"Creatina annullata");};
 }
 function renderRecent(){
   const box=document.getElementById("recentProgress");
@@ -698,12 +855,15 @@ function renderWorkout(){
   renderDayTabs();
   const w=WORKOUTS[currentDay];
   document.getElementById("dayTip").innerHTML=w.tip;
+  const slots=daySlots(currentDay);
   const list=document.getElementById("exerciseList");list.innerHTML="";
-  w.ex.forEach((e,i)=>{
-    const id=currentDay+i;
+  slots.forEach((exId,i)=>{
+    const e=EXERCISES[exId]||{n:"?",sets:3,rep:"",note:"",g:"",heavy:false};
+    const setKey=currentDay+":"+i;            // chiave serie del giorno
+    const logId=exId;                          // log/storico per ESERCIZIO (segue lo swap)
     const sets=exSets(currentDay,i);
     const done=sets.filter(s=>s.done).length;
-    const last=DB.lastLog[id];
+    const last=DB.lastLog[logId];
     const card=document.createElement("div");
     card.className="ex"+(done===sets.length?" alldone":"");
     let setsHtml='<div class="set-labels"><span>Peso kg</span><span>Rip</span><span></span></div>';
@@ -715,64 +875,82 @@ function renderWorkout(){
         +'<div class="set-done'+(s.done?" on":"")+'" data-si="'+si+'"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>'
         +'</div>';
     });
+    const grpLabel=GROUPS[e.g]||"";
     card.innerHTML=
       '<div class="ex-hd"><div class="ex-ring'+(done===sets.length?" done":"")+'">'+exRing(done,sets.length)+'<div class="n num">'+done+'/'+sets.length+'</div></div>'
-      +'<div class="ex-info"><div class="ex-name">'+e.n+'</div><div class="ex-meta">'+e.sets+' serie × '+e.rep+'</div></div>'
+      +'<div class="ex-info"><div class="ex-name">'+e.n+'</div><div class="ex-meta">'+grpLabel+' · '+e.sets+' serie × '+e.rep+'</div></div>'
       +'<div class="ex-toggle">+</div></div>'
       +'<div class="ex-detail"><div class="ex-detail-in">'
+      +'<div class="ex-swap-bar" data-slot="'+i+'"><span>'+grpLabel+'</span><span class="ex-swap-act">⇄ cambia esercizio</span></div>'
       +'<div class="ex-note">'+e.note+'</div>'
       +(last&&last.best?'<div class="last-hint">Ultima volta: <b>'+last.best+'</b> · '+last.date+'</div>':'<div class="last-hint">Prima volta su questo esercizio — i numeri di oggi diventano il tuo riferimento.</div>')
       +setsHtml
-      +strengthSpark(id)
+      +strengthSpark(logId)
       +'</div></div>';
     // expand
     card.querySelector(".ex-hd").onclick=(ev)=>{if(ev.target.closest(".set"))return;card.classList.toggle("open");};
+    // cambia esercizio
+    card.querySelector(".ex-swap-bar").onclick=(ev)=>{ev.stopPropagation();openExerciseSwap(currentDay,i);};
     // inputs
     card.querySelectorAll(".sw").forEach(inp=>inp.onchange=()=>{sets[+inp.dataset.si].w=inp.value;save();});
     card.querySelectorAll(".sr").forEach(inp=>inp.onchange=()=>{sets[+inp.dataset.si].r=inp.value;save();});
-    // set done -> toggle + rest timer
     card.querySelectorAll(".set-done").forEach(btn=>{
       btn.onclick=(ev)=>{
         ev.stopPropagation();
         const si=+btn.dataset.si;const s=sets[si];
         s.done=!s.done;
         if(s.done){
-          // salva i valori dai campi
           const sw=card.querySelector('.sw[data-si="'+si+'"]'),sr=card.querySelector('.sr[data-si="'+si+'"]');
           s.w=sw.value;s.r=sr.value;
-          updateLastLog(id,e.n);
-          // avvia timer riposo (non sull'ultima serie)
+          updateLastLog(setKey,logId,e.n);
           if(si<sets.length-1){startRest(e.heavy?DB.rest.heavy:DB.rest.light);}
           else{stopRest();toast("Esercizio completato 💪");}
         }
         save();renderWorkout();
-        // riapri la card che era aperta
         const cards=list.querySelectorAll(".ex");if(cards[i])cards[i].classList.add("open");
       };
     });
     list.appendChild(card);
   });
 }
-function updateLastLog(id,name){
-  const d=today();const sets=d.sets[id];
+// selettore di scambio esercizio (stesso gruppo, filtrato per attrezzatura)
+function openExerciseSwap(dayKey,slotIdx){
+  const slots=daySlots(dayKey);const curId=slots[slotIdx];
+  const alts=exAlternatives(curId);
+  let html="";
+  if(alts.length<=1){
+    html='<div class="empty" style="padding:20px;">Nessuna alternativa disponibile per questo gruppo con l\'attrezzatura selezionata.<br>Aggiungi attrezzatura in Setup per sbloccare più esercizi.</div>';
+  }
+  alts.forEach(aid=>{
+    const a=EXERCISES[aid];
+    html+='<div class="opt" data-ex="'+aid+'"><div class="opt-check'+(aid===curId?' on':'')+'"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>'
+      +'<div class="opt-body"><div class="opt-name">'+a.n+'</div><div class="opt-macros">'+a.sets+' serie × '+a.rep+' · '+a.equip.map(t=>{const eq=EQUIP_ALL.find(x=>x.id===t);return eq?eq.n:t;}).join(", ")+'</div></div></div>';
+  });
+  showSheet((GROUPS[EXERCISES[curId].g]||"")+" — scegli esercizio",html);
+  document.querySelectorAll('#sheetOpts .opt').forEach(el=>el.onclick=()=>{
+    const newId=el.dataset.ex;slots[slotIdx]=newId;
+    // resetta le serie del giorno per questo slot (nuovo esercizio = nuove serie)
+    delete today().sets[dayKey+":"+slotIdx];
+    save();closeSheet();renderWorkout();
+  });
+}
+function updateLastLog(setKey,logId,name){
+  const d=today();const sets=d.sets[setKey];
   const doneSets=sets.filter(s=>s.done&&(s.w||s.r));
   if(!doneSets.length)return;
-  // "best" = serie con più peso, o più rip se senza peso
   let best=doneSets[0];
   doneSets.forEach(s=>{const bw=parseFloat(s.w)||0,bb=parseFloat(best.w)||0;if(bw>bb)best=s;else if(bw===bb&&(parseFloat(s.r)||0)>(parseFloat(best.r)||0))best=s;});
   const bestStr=(best.w?best.w+" kg × ":"")+(best.r||"?")+(best.w?"":" rip");
-  DB.lastLog[id]={name:name, best:bestStr, sets:sets.map(s=>({w:s.w,r:s.r})), date:new Date().toLocaleDateString("it-IT",{day:"2-digit",month:"2-digit"}), ts:Date.now()};
-  // ---- storico per grafico forza-nel-tempo ----
-  // metrica: se l'esercizio usa peso -> miglior peso; altrimenti -> ripetizioni totali della giornata
+  DB.lastLog[logId]={name:name, best:bestStr, sets:sets.map(s=>({w:s.w,r:s.r})), date:new Date().toLocaleDateString("it-IT",{day:"2-digit",month:"2-digit"}), ts:Date.now()};
   const usesWeight=doneSets.some(s=>parseFloat(s.w)>0);
   let val, unit;
   if(usesWeight){ val=parseFloat(best.w)||0; unit="kg"; }
   else { val=doneSets.reduce((a,s)=>a+(parseFloat(s.r)||0),0); unit="rip tot"; }
-  if(!DB.hist[id])DB.hist[id]=[];
+  if(!DB.hist[logId])DB.hist[logId]=[];
   const tk=todayKey();
-  const existing=DB.hist[id].find(h=>h.key===tk);
+  const existing=DB.hist[logId].find(h=>h.key===tk);
   if(existing){ existing.val=val; existing.unit=unit; }
-  else { DB.hist[id].push({key:tk, val:val, unit:unit, date:new Date().toLocaleDateString("it-IT",{day:"2-digit",month:"2-digit"})}); }
+  else { DB.hist[logId].push({key:tk, val:val, unit:unit, date:new Date().toLocaleDateString("it-IT",{day:"2-digit",month:"2-digit"})}); }
 }
 // sparkline SVG per la forza nel tempo di un esercizio
 function strengthSpark(id){
@@ -801,8 +979,8 @@ function strengthSpark(id){
     +'</div>';
 }
 document.getElementById("resetWorkout").onclick=()=>{
-  const d=today();const w=WORKOUTS[currentDay];
-  w.ex.forEach((e,i)=>{delete d.sets[currentDay+i];});
+  const d=today();
+  daySlots(currentDay).forEach((exId,i)=>{delete d.sets[currentDay+":"+i];});
   save();renderWorkout();toast("Sessione azzerata");
 };
 
@@ -861,6 +1039,26 @@ document.getElementById("saveRest").onclick=()=>{
   DB.rest={heavy:+document.getElementById("setRestHeavy").value||120, light:+document.getElementById("setRestLight").value||60};
   save();toast("Tempi salvati");
 };
+// ---- attrezzatura ----
+function renderEquip(){
+  const grid=document.getElementById("equipGrid");if(!grid)return;grid.innerHTML="";
+  const av=availEquip();
+  EQUIP_ALL.forEach(eq=>{
+    const on=av.includes(eq.id);const locked=eq.always;
+    const chip=document.createElement("div");chip.className="equip-chip"+(on?" on":"")+(locked?" locked":"");
+    chip.innerHTML='<div class="ec">'+(on?'<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>':'')+'</div>'+eq.n;
+    if(!locked)chip.onclick=()=>{
+      const i=DB.equip.indexOf(eq.id);
+      if(i>=0)DB.equip.splice(i,1);else DB.equip.push(eq.id);
+      save();renderEquip();toast("Attrezzatura aggiornata");
+    };
+    grid.appendChild(chip);
+  });
+}
+document.getElementById("saveWater").onclick=()=>{
+  DB.reminders=DB.reminders||{};DB.reminders.water=Math.max(1,Math.min(20,+document.getElementById("setWater").value||8));
+  save();toast("Promemoria acqua salvato");
+};
 document.getElementById("exportBtn").onclick=()=>{
   const blob=new Blob([JSON.stringify(DB)],{type:"application/json"});const url=URL.createObjectURL(blob);
   const a=document.createElement("a");a.href=url;a.download="allena-backup-"+todayKey()+".json";a.click();
@@ -869,7 +1067,7 @@ document.getElementById("exportBtn").onclick=()=>{
 document.getElementById("importBtn").onclick=()=>document.getElementById("importFile").click();
 document.getElementById("importFile").onchange=(e)=>{
   const f=e.target.files[0];if(!f)return;const rd=new FileReader();
-  rd.onload=()=>{try{const o=JSON.parse(rd.result);if(o.days&&o.rest){if(!o.hist)o.hist={};if(!o.diet)o.diet={};DB=o;save();initFields();goTab("oggi");toast("Backup importato");}else toast("File non valido");}catch(x){toast("File non valido");}};
+  rd.onload=()=>{try{const o=JSON.parse(rd.result);if(o.days&&o.rest){if(!o.hist)o.hist={};if(!o.diet)o.diet={};if(!o.equip)o.equip=["corpo","board","zaino"];if(!o.reminders)o.reminders={water:8,creatine:true};if(!o.custom)o.custom={};DB=o;Object.keys(DB.custom).forEach(id=>{if(!FOODS[id])FOODS[id]=DB.custom[id];});save();initFields();goTab("oggi");toast("Backup importato");}else toast("File non valido");}catch(x){toast("File non valido");}};
   rd.readAsText(f);
 };
 document.getElementById("wipeBtn").onclick=()=>{if(confirm("Cancellare tutti i dati? Irreversibile. Esporta prima un backup.")){localStorage.removeItem(KEY);DB=load();initFields();goTab("oggi");toast("Dati cancellati");}};
@@ -1079,6 +1277,7 @@ function openIngredientPicker(mk,exIdx){
   // raggruppa per categoria
   const cats={carbo:"Cereali / carboidrati",legumi:"Legumi",proteina:"Proteine",latticino:"Latticini",verdura:"Verdure",frutta:"Frutta",grasso:"Grassi / frutta secca",extra:"Extra"};
   let html='<input id="foodSearch" placeholder="Cerca alimento..." style="width:calc(100% - 40px);margin:0 20px 10px;background:var(--surface2);border:1px solid var(--line);border-radius:9px;color:var(--ink);padding:11px;font-size:15px;">';
+  html+='<div class="opt" id="newFoodBtn" style="border-top:1px solid var(--line);"><div class="opt-body"><div class="opt-name" style="color:var(--accent);">+ Crea nuovo alimento</div><div class="opt-macros">inserisci tu i valori per 100g</div></div></div>';
   html+='<div id="foodList">';
   Object.keys(cats).forEach(cat=>{
     const items=Object.keys(FOODS).filter(k=>FOODS[k].cat===cat);
@@ -1099,11 +1298,55 @@ function openIngredientPicker(mk,exIdx){
     save();closeSheet();renderDieta();
   };
   document.querySelectorAll('#sheetOpts .food-opt').forEach(el=>el.onclick=()=>add(el.dataset.f));
+  const newBtn=document.getElementById("newFoodBtn");
+  if(newBtn)newBtn.onclick=()=>openNewFoodForm(mk,exIdx);
   const search=document.getElementById("foodSearch");
   if(search)search.oninput=()=>{
     const q=search.value.toLowerCase();
     document.querySelectorAll('#foodList .food-opt').forEach(el=>{el.style.display=el.dataset.name.includes(q)?"":"none";});
     document.querySelectorAll('#foodList .food-cat').forEach(c=>{c.style.display=q?"none":"";});
+  };
+}
+// form creazione alimento personalizzato (valori per 100g)
+function openNewFoodForm(mk,exIdx){
+  const cats={carbo:"Carboidrati",legumi:"Legumi",proteina:"Proteine",latticino:"Latticini",verdura:"Verdure",frutta:"Frutta",grasso:"Grassi",extra:"Extra"};
+  let opts=Object.keys(cats).map(c=>'<option value="'+c+'">'+cats[c]+'</option>').join("");
+  const html='<div class="cf-form">'
+    +'<input id="cfName" placeholder="Nome alimento (es. Skyr alla vaniglia)">'
+    +'<select id="cfCat">'+opts+'</select>'
+    +'<div style="font-size:12px;color:var(--faint);padding:2px 0;">Valori per 100g (dall\'etichetta):</div>'
+    +'<div class="cf-macros">'
+    +'<input id="cfP" type="number" inputmode="decimal" placeholder="Prot">'
+    +'<input id="cfC" type="number" inputmode="decimal" placeholder="Carb">'
+    +'<input id="cfG" type="number" inputmode="decimal" placeholder="Grassi">'
+    +'</div>'
+    +'<input id="cfKcal" type="number" inputmode="numeric" placeholder="Calorie per 100g (opzionale, le calcolo io)">'
+    +'<div class="cf-kcal" id="cfKcalCalc"></div>'
+    +'<button class="btn" id="cfSave" style="width:100%;padding:13px;">Salva e aggiungi alla ricetta</button>'
+    +'</div>';
+  showSheet("Nuovo alimento",html);
+  function calc(){
+    const p=+document.getElementById("cfP").value||0,c=+document.getElementById("cfC").value||0,g=+document.getElementById("cfG").value||0;
+    const k=Math.round(p*4+c*4+g*9);
+    document.getElementById("cfKcalCalc").innerHTML='Stima calorie: <b>'+k+' kcal</b> / 100g';
+    return k;
+  }
+  ["cfP","cfC","cfG"].forEach(id=>document.getElementById(id).oninput=calc);
+  document.getElementById("cfSave").onclick=()=>{
+    const name=document.getElementById("cfName").value.trim();
+    if(!name){toast("Inserisci un nome");return;}
+    const p=+document.getElementById("cfP").value||0,c=+document.getElementById("cfC").value||0,g=+document.getElementById("cfG").value||0;
+    let kcal=+document.getElementById("cfKcal").value|| (p*4+c*4+g*9);
+    kcal=Math.round(kcal);
+    const cat=document.getElementById("cfCat").value;
+    // id univoco
+    const id="cust_"+name.toLowerCase().replace(/[^a-z0-9]/g,"").slice(0,16)+"_"+Date.now().toString().slice(-4);
+    const food={n:name,cat:cat,per:100,kcal:kcal,p:p,c:c,g:g,step:cat==='grasso'||cat==='extra'?10:30,custom:true};
+    FOODS[id]=food;DB.custom[id]=food;save();
+    // aggiungilo subito alla ricetta
+    const dd=dietDay();const row={f:id,q:100};
+    if(exIdx!==null && exIdx!==undefined)dd.extra[exIdx].ings.push(row);else dd.meals[mk].ings.push(row);
+    save();closeSheet();renderDieta();toast("Alimento creato e aggiunto");
   };
 }
 document.getElementById("rerollDiet").onclick=()=>{
@@ -1134,13 +1377,15 @@ function goTab(id){
   document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id==="view-"+id));
   document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t.dataset.tab===id));
   window.scrollTo(0,0);
-  if(id==="oggi")renderOggi();if(id==="allena")renderWorkout();if(id==="dieta")renderDieta();if(id==="peso")renderWeight();
+  if(id==="oggi")renderOggi();if(id==="allena")renderWorkout();if(id==="dieta")renderDieta();if(id==="peso")renderWeight();if(id==="impo")renderEquip();
 }
 window.goTab=goTab;
 
 function initFields(){
   document.getElementById("setRestHeavy").value=DB.rest.heavy;
   document.getElementById("setRestLight").value=DB.rest.light;
+  const sw=document.getElementById("setWater");if(sw)sw.value=(DB.reminders&&DB.reminders.water)||8;
+  renderEquip();
 }
 function setHeader(){
   const d=new Date();const g=["Domenica","Lunedì","Martedì","Mercoledì","Giovedì","Venerdì","Sabato"];
