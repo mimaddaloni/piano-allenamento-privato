@@ -325,7 +325,8 @@
     <div class="day-tabs" id="dayTabs"></div>
     <div class="tip" id="dayTip"></div>
     <div id="exerciseList"></div>
-    <button class="reset-day" id="resetWorkout">Azzera la sessione di oggi</button>
+    <button class="reset-day" id="genPlan" style="border-color:var(--accent);color:var(--accent);">⚡ Genera piano A/B/C in base all'attrezzatura</button>
+    <button class="reset-day" id="resetWorkout" style="margin-top:8px;">Azzera la sessione di oggi</button>
   </section>
 
   <!-- ============ DIETA ============ -->
@@ -676,6 +677,10 @@ if(!DB.diet)DB.diet={};
 if(!DB.equip)DB.equip=["corpo","board","zaino"];
 if(!DB.reminders)DB.reminders={water:8, creatine:true};
 if(!DB.custom)DB.custom={};
+// applica il piano A/B/C generato in precedenza, se presente
+if(DB.genPlan){
+  ["A","B","C"].forEach(d=>{ if(DB.genPlan[d]&&DB.genPlan[d].length) WORKOUTS[d].slots=DB.genPlan[d]; });
+}
 // unisci alimenti personalizzati salvati dall'utente nella dispensa
 Object.keys(DB.custom).forEach(id=>{ if(!FOODS[id]) FOODS[id]=DB.custom[id]; });
 function load(){
@@ -983,6 +988,141 @@ document.getElementById("resetWorkout").onclick=()=>{
   daySlots(currentDay).forEach((exId,i)=>{delete d.sets[currentDay+":"+i];});
   save();renderWorkout();toast("Sessione azzerata");
 };
+// ---- GENERATORE PIANO A/B/C ----
+// pool di esercizi disponibili per gruppo, ordinati: prima i "pesanti"/compound
+function poolByGroup(){
+  const pool={};Object.keys(GROUPS).forEach(g=>pool[g]=[]);
+  Object.keys(EXERCISES).forEach(id=>{ if(exAvailable(id)) pool[EXERCISES[id].g].push(id); });
+  Object.keys(pool).forEach(g=>pool[g].sort((a,b)=>exTier(a)-exTier(b)));
+  return pool;
+}
+// tier: 1 = compound primario (più stimolo/serie), 2 = accessorio, 3 = isolamento/core
+function exTier(id){
+  const e=EXERCISES[id];if(!e)return 2;
+  if(e.g==="core")return 3;
+  if(e.g==="braccia")return 3;               // braccia = isolamento
+  if(e.heavy)return 1;                        // pesante = compound primario
+  if(e.g==="glutei"||e.g==="spalle")return 2; // accessori naturali
+  return 2;
+}
+// numero di serie di un esercizio (per contare il volume settimanale)
+function exSetsCount(id){return (EXERCISES[id]&&EXERCISES[id].sets)||3;}
+/* Struttura settimanale ottimizzata per ipertrofia (full-body ×3):
+   ogni giorno = COMPOUND GAMBE (primo, fresco) + SPINTA (petto) + TIRATA (schiena)
+                 + ACCESSORIO che ruota (spalle/glutei/braccia) + 2° GAMBE o complementare + CORE (ultimo).
+   La rotazione distribuisce il volume e dà a ogni gruppo 2-3 stimoli/settimana a intensità variata. */
+const DAY_PLANS={
+  // role: gruppo + se serve compound (c) o accessorio (a)
+  A:[{g:"gambe",t:1},{g:"petto",t:1},{g:"schiena",t:1},{g:"spalle",t:2},{g:"glutei",t:2},{g:"core",t:3}],
+  B:[{g:"gambe",t:1},{g:"schiena",t:1},{g:"petto",t:1},{g:"gambe",t:2},{g:"braccia",t:3},{g:"core",t:3}],
+  C:[{g:"gambe",t:1},{g:"petto",t:1},{g:"schiena",t:1},{g:"spalle",t:2},{g:"braccia",t:3},{g:"core",t:3}],
+};
+// target di volume settimanale (serie) per gruppo — range efficace per ipertrofia
+const VOL_TARGET={gambe:[12,18],petto:[10,16],schiena:[10,16],spalle:[8,12],glutei:[6,12],braccia:[6,10],core:[6,12]};
+function generatePlan(){
+  const pool=poolByGroup();
+  const essential=["gambe","petto","schiena","core"];
+  const missing=essential.filter(g=>pool[g].length===0);
+  if(missing.length){ toast("Manca attrezzatura per: "+missing.map(g=>GROUPS[g]).join(", ")); return false; }
+  const usedCount={};   // quante volte un esercizio è già stato scelto nella settimana
+  const weekVol={};     // serie settimanali accumulate per gruppo
+  Object.keys(GROUPS).forEach(g=>weekVol[g]=0);
+  // sceglie l'esercizio migliore per un ruolo: tier richiesto, meno usato, e che aiuti a colmare il volume
+  function pick(group,wantTier){
+    let list=pool[group];if(!list.length)return null;
+    // filtra per tier desiderato; se vuoto, allarga
+    let cand=list.filter(id=>exTier(id)===wantTier);
+    if(!cand.length)cand=list.filter(id=>exTier(id)<=wantTier);
+    if(!cand.length)cand=list.slice();
+    // ordina: meno usato prima, poi tier più basso (compound), poi più serie (più volume)
+    cand.sort((a,b)=>{
+      const ua=usedCount[a]||0,ub=usedCount[b]||0;
+      if(ua!==ub)return ua-ub;
+      if(exTier(a)!==exTier(b))return exTier(a)-exTier(b);
+      return exSetsCount(b)-exSetsCount(a);
+    });
+    const chosen=cand[0];
+    usedCount[chosen]=(usedCount[chosen]||0)+1;
+    weekVol[EXERCISES[chosen].g]+=exSetsCount(chosen);
+    return chosen;
+  }
+  const d=today();const result={};
+  ["A","B","C"].forEach(day=>{
+    const plan=DAY_PLANS[day];
+    const slots=plan.map(role=>{
+      let g=role.g;
+      if(!pool[g].length){ g=["gambe","petto","schiena","core"].find(x=>pool[x].length); }
+      return pick(g,role.t);
+    }).filter(Boolean);
+    result[day]=slots;
+    WORKOUTS[day].slots=slots;
+    if(d.slots)delete d.slots[day];
+    Object.keys(d.sets||{}).forEach(k=>{if(k.indexOf(day+":")===0)delete d.sets[k];});
+  });
+  // secondo passaggio: riequilibra il volume dei gruppi principali
+  balanceVolume(result,pool,weekVol,usedCount);
+  // assicura: in ogni giorno l'ordine ottimale — compound principali davanti, accessori, core in fondo
+  // priorità di ordinamento per gruppo (più basso = prima nella sessione)
+  const ORDER={gambe:0,petto:1,schiena:2,spalle:3,glutei:4,braccia:5,core:99};
+  ["A","B","C"].forEach(day=>{
+    let s=WORKOUTS[day].slots.slice();
+    s.sort((a,b)=>{
+      const ca=EXERCISES[a].g==="core", cb=EXERCISES[b].g==="core";
+      if(ca!==cb)return ca?1:-1;                 // core sempre in fondo
+      if(ca&&cb)return 0;
+      const ta=exTier(a)===1?0:1, tb=exTier(b)===1?0:1;
+      if(ta!==tb)return ta-tb;                    // compound pesanti davanti
+      const oa=ORDER[EXERCISES[a].g], ob=ORDER[EXERCISES[b].g];
+      return (oa===undefined?9:oa)-(ob===undefined?9:ob); // poi per ruolo (gambe per prime)
+    });
+    WORKOUTS[day].slots=s;result[day]=s;
+  });
+  DB.genPlan={A:WORKOUTS.A.slots,B:WORKOUTS.B.slots,C:WORKOUTS.C.slots};
+  DB.lastVol=weekVol;
+  save();
+  return true;
+}
+// riequilibra: se un gruppo principale è sotto il minimo, aumenta sostituendo un isolamento ridondante,
+// ma senza azzerare un gruppo (lascia almeno 1 esercizio di braccia se presente)
+function balanceVolume(result,pool,weekVol,usedCount){
+  ["gambe","petto","schiena","spalle","glutei"].forEach(g=>{
+    const min=VOL_TARGET[g][0];
+    let guard=0;
+    while(weekVol[g]<min && pool[g].length && guard<2){
+      guard++;
+      let done=false;
+      ["B","C","A"].forEach(day=>{
+        if(done)return;
+        const slots=result[day];
+        for(let i=slots.length-1;i>=0;i--){
+          const cur=slots[i];
+          // sostituibile: braccia (isolamento) ma solo se ne resta almeno una in settimana, mai il core
+          const armCount=["A","B","C"].reduce((n,dd)=>n+result[dd].filter(x=>EXERCISES[x].g==="braccia").length,0);
+          if(exTier(cur)===3 && EXERCISES[cur].g==="braccia" && armCount>1){
+            const cand=pool[g].filter(id=>!slots.includes(id));
+            if(cand.length){
+              cand.sort((a,b)=>(usedCount[a]||0)-(usedCount[b]||0)||exTier(a)-exTier(b));
+              const add=cand[0];
+              weekVol[EXERCISES[cur].g]-=exSetsCount(cur);
+              slots[i]=add;weekVol[g]+=exSetsCount(add);
+              usedCount[add]=(usedCount[add]||0)+1;
+              WORKOUTS[day].slots=slots;done=true;break;
+            }
+          }
+        }
+      });
+      if(!done)break;
+    }
+  });
+}
+document.getElementById("genPlan").onclick=()=>{
+  if(generatePlan()){
+    renderWorkout();
+    const v=DB.lastVol||{};
+    const summary=Object.keys(GROUPS).filter(g=>v[g]).map(g=>GROUPS[g]+" "+v[g]).join(" · ");
+    toast("Piano generato 💪");
+  }
+};
 
 /* ===================== PESO ===================== */
 function renderWeight(){
@@ -1067,7 +1207,7 @@ document.getElementById("exportBtn").onclick=()=>{
 document.getElementById("importBtn").onclick=()=>document.getElementById("importFile").click();
 document.getElementById("importFile").onchange=(e)=>{
   const f=e.target.files[0];if(!f)return;const rd=new FileReader();
-  rd.onload=()=>{try{const o=JSON.parse(rd.result);if(o.days&&o.rest){if(!o.hist)o.hist={};if(!o.diet)o.diet={};if(!o.equip)o.equip=["corpo","board","zaino"];if(!o.reminders)o.reminders={water:8,creatine:true};if(!o.custom)o.custom={};DB=o;Object.keys(DB.custom).forEach(id=>{if(!FOODS[id])FOODS[id]=DB.custom[id];});save();initFields();goTab("oggi");toast("Backup importato");}else toast("File non valido");}catch(x){toast("File non valido");}};
+  rd.onload=()=>{try{const o=JSON.parse(rd.result);if(o.days&&o.rest){if(!o.hist)o.hist={};if(!o.diet)o.diet={};if(!o.equip)o.equip=["corpo","board","zaino"];if(!o.reminders)o.reminders={water:8,creatine:true};if(!o.custom)o.custom={};DB=o;Object.keys(DB.custom).forEach(id=>{if(!FOODS[id])FOODS[id]=DB.custom[id];});if(DB.genPlan){["A","B","C"].forEach(d=>{if(DB.genPlan[d]&&DB.genPlan[d].length)WORKOUTS[d].slots=DB.genPlan[d];});}save();initFields();goTab("oggi");toast("Backup importato");}else toast("File non valido");}catch(x){toast("File non valido");}};
   rd.readAsText(f);
 };
 document.getElementById("wipeBtn").onclick=()=>{if(confirm("Cancellare tutti i dati? Irreversibile. Esporta prima un backup.")){localStorage.removeItem(KEY);DB=load();initFields();goTab("oggi");toast("Dati cancellati");}};
