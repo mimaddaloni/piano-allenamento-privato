@@ -14,6 +14,7 @@
     --ink:#f2f4f8; --muted:#8b93a7; --faint:#5b6478;
     --accent:#e8ff3a; --accent-dim:#c9dd2e;
     --good:#4ade80; --warn:#fbbf24; --rest:#5b9dff;
+    --proteine:#ff8a5b; --carbo:#5b9dff; --grassi:#f7d154;
     --r:16px; --r-sm:11px;
     --safe-t:env(safe-area-inset-top); --safe-b:env(safe-area-inset-bottom);
   }
@@ -155,6 +156,61 @@
     background:var(--accent);color:#0f1115;padding:11px 20px;border-radius:99px;font-size:14px;font-weight:700;
     opacity:0;pointer-events:none;transition:all .3s;z-index:60;white-space:nowrap;}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  /* ===== DIETA ===== */
+  .diet-summary{display:flex;gap:14px;align-items:center;}
+  .energy-ring{position:relative;width:96px;height:96px;flex-shrink:0;}
+  .energy-ring .ctr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .energy-ring .kc{font-size:21px;font-weight:800;line-height:1;letter-spacing:-.02em;}
+  .energy-ring .gl{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:3px;}
+  .nutri{flex:1;display:flex;flex-direction:column;gap:9px;}
+  .nutri .row{}
+  .nutri .top{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px;}
+  .nutri .top b{font-weight:700;}
+  .nutri .top span{color:var(--muted);font-variant-numeric:tabular-nums;}
+  .nutri .bar{height:6px;background:var(--surface2);border-radius:99px;overflow:hidden;}
+  .nutri .bar>i{display:block;height:100%;border-radius:99px;transition:width .4s cubic-bezier(.4,0,.2,1);}
+  .surplus-badge{font-size:12px;font-weight:700;padding:3px 10px;border-radius:99px;display:inline-block;margin-top:2px;}
+  .surplus-badge.ok{background:rgba(74,222,128,.16);color:var(--good);}
+  .surplus-badge.low{background:rgba(251,191,36,.16);color:var(--warn);}
+  .meal-block{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);margin-bottom:12px;overflow:hidden;}
+  .meal-block-hd{padding:14px 16px 10px;display:flex;justify-content:space-between;align-items:baseline;}
+  .meal-block-hd .mn{font-size:15px;font-weight:700;}
+  .meal-block-hd .mk{font-size:12px;color:var(--faint);font-variant-numeric:tabular-nums;}
+  .slot{padding:11px 16px;border-top:1px solid var(--line);display:flex;align-items:center;gap:12px;cursor:pointer;transition:background .12s;}
+  .slot:active{background:var(--surface2);}
+  .slot-ico{width:30px;height:30px;border-radius:8px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+  .slot-body{flex:1;min-width:0;}
+  .slot-role{font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:var(--faint);font-weight:700;}
+  .slot-pick{font-size:14.5px;font-weight:600;margin-top:2px;}
+  .slot-pick .amt{color:var(--muted);font-weight:500;font-size:13px;}
+  .slot-swap{color:var(--faint);font-size:13px;flex-shrink:0;display:flex;align-items:center;gap:3px;}
+  .slot-swap svg{width:15px;height:15px;stroke:currentColor;stroke-width:2;fill:none;}
+  /* sheet (selettore varianti) */
+  .sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:70;opacity:0;pointer-events:none;transition:opacity .25s;}
+  .sheet-bg.show{opacity:1;pointer-events:auto;}
+  .sheet{position:fixed;left:0;right:0;bottom:0;z-index:71;background:var(--surface);
+    border-radius:22px 22px 0 0;border-top:1px solid var(--line);padding:8px 0 calc(16px + var(--safe-b));
+    transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);max-height:78vh;overflow-y:auto;}
+  .sheet.show{transform:none;}
+  .sheet-grip{width:38px;height:4px;background:var(--line);border-radius:99px;margin:8px auto 6px;}
+  .sheet-title{font-size:13px;font-weight:700;text-align:center;color:var(--muted);padding:4px 20px 12px;
+    text-transform:uppercase;letter-spacing:.08em;}
+  .opt{padding:14px 20px;display:flex;align-items:center;gap:13px;border-top:1px solid var(--line);cursor:pointer;}
+  .opt:active{background:var(--surface2);}
+  .opt-check{width:22px;height:22px;border-radius:7px;border:2px solid var(--line);flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+  .opt-check.on{background:var(--accent);border-color:var(--accent);}
+  .opt-check svg{width:13px;height:13px;stroke:transparent;stroke-width:3.5;fill:none;}
+  .opt-check.on svg{stroke:#0f1115;}
+  .opt-body{flex:1;}
+  .opt-name{font-size:15px;font-weight:600;}
+  .opt-macros{font-size:12px;color:var(--faint);font-variant-numeric:tabular-nums;margin-top:2px;}
+  .meal-eaten{margin:0 16px 14px;width:calc(100% - 32px);background:var(--surface2);border:1px solid var(--line);
+    color:var(--muted);padding:11px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;}
+  .meal-eaten.on{background:rgba(74,222,128,.14);border-color:rgba(74,222,128,.4);color:var(--good);}
+  .meal-eaten svg{width:16px;height:16px;stroke:currentColor;stroke-width:3;fill:none;}
+  .booster{background:var(--surface2);border:1px dashed var(--line);border-radius:10px;padding:10px 12px;margin:0 16px 14px;
+    font-size:12.5px;color:var(--muted);line-height:1.5;}
+  .booster b{color:var(--accent-dim);}
 </style>
 </head>
 <body>
@@ -200,6 +256,34 @@
     <div class="tip" id="dayTip"></div>
     <div id="exerciseList"></div>
     <button class="reset-day" id="resetWorkout">Azzera la sessione di oggi</button>
+  </section>
+
+  <!-- ============ DIETA ============ -->
+  <section class="view" id="view-dieta">
+    <div class="card">
+      <div class="card-hd"><span class="t">Giornata di oggi</span><span class="h-date" id="dietDayLabel"></span></div>
+      <div class="diet-summary" style="margin-top:12px;">
+        <div class="energy-ring">
+          <svg width="96" height="96" viewBox="0 0 96 96">
+            <circle cx="48" cy="48" r="41" fill="none" stroke="var(--surface2)" stroke-width="9"/>
+            <circle id="energyRing" cx="48" cy="48" r="41" fill="none" stroke="var(--accent)" stroke-width="9"
+              stroke-linecap="round" stroke-dasharray="257.6" stroke-dashoffset="257.6"
+              transform="rotate(-90 48 48)" style="transition:stroke-dashoffset .5s cubic-bezier(.4,0,.2,1);"/>
+          </svg>
+          <div class="ctr"><div class="kc num" id="dietKcal">0</div><div class="gl">/ <span id="dietKcalGoal" class="num">3200</span> kcal</div></div>
+        </div>
+        <div class="nutri">
+          <div class="row"><div class="top"><b>Proteine</b><span><span id="dpNow" class="num">0</span>/<span id="dpGoal" class="num">160</span>g</span></div><div class="bar"><i id="dpBar" style="width:0;background:var(--proteine,#ff8a5b);"></i></div></div>
+          <div class="row"><div class="top"><b>Carboidrati</b><span><span id="dcNow" class="num">0</span>/<span id="dcGoal" class="num">400</span>g</span></div><div class="bar"><i id="dcBar" style="width:0;background:var(--carbo,#5b9dff);"></i></div></div>
+          <div class="row"><div class="top"><b>Grassi</b><span><span id="dgNow" class="num">0</span>/<span id="dgGoal" class="num">88</span>g</span></div><div class="bar"><i id="dgBar" style="width:0;background:var(--grassi,#f7d154);"></i></div></div>
+        </div>
+      </div>
+      <div id="surplusBadge" style="margin-top:12px;"></div>
+    </div>
+    <div class="tip" id="dietTip"><b>Come funziona:</b> ogni pasto è composto da blocchi (carboidrato, proteina, ecc.). Tocca un blocco per scambiare la variante tra quelle che ti piacciono. Spunta "mangiato" per sommarlo al totale del giorno.</div>
+    <div id="mealBlocks"></div>
+    <button class="reset-day" id="rerollDiet">🎲 Rigenera la giornata con altre varianti</button>
+    <button class="reset-day" id="resetDiet" style="margin-top:8px;">Azzera spunte di oggi</button>
   </section>
 
   <!-- ============ PESO ============ -->
@@ -259,6 +343,14 @@
   </div>
 </div>
 
+<!-- variant picker sheet -->
+<div class="sheet-bg" id="sheetBg"></div>
+<div class="sheet" id="sheet">
+  <div class="sheet-grip"></div>
+  <div class="sheet-title" id="sheetTitle">Scegli</div>
+  <div id="sheetOpts"></div>
+</div>
+
 <nav id="tabbar"></nav>
 <div class="toast" id="toast"></div>
 
@@ -297,14 +389,125 @@ const WORKOUTS = {
 };
 const DAY_MAP={1:"A",3:"B",5:"C"};
 
+/* ===================== DATI DIETA (sistema a blocchi) =====================
+   Ogni pasto = lista di slot. Ogni slot ha un ruolo e un array di varianti.
+   Varianti scelte per: gusti dell'utente, niente piccante, frutta pratica,
+   e ALTA densità calorica (priorità surplus). kcal/p/c/g per porzione indicata. */
+const ENERGY_GOAL={kcal:3200,p:160,c:400,g:88};
+const MENU={
+  colazione:{ name:"Colazione", icon:"🌅", slots:[
+    {role:"Base avena", opts:[
+      {n:"Avena al cacao + latte intero", a:"100g + 300ml", kcal:520,p:24,c:62,g:16},
+      {n:"Avena + latte intero + miele", a:"100g + 300ml", kcal:540,p:20,c:72,g:14},
+      {n:"Pancake avena e uova", a:"80g + 2 uova", kcal:480,p:28,c:50,g:16},
+    ]},
+    {role:"Proteina", opts:[
+      {n:"Albume + 2 uova intere", a:"150g + 2", kcal:230,p:26,c:2,g:12},
+      {n:"Yogurt greco intero", a:"200g", kcal:200,p:18,c:8,g:10},
+      {n:"Fiocchi di latte", a:"200g", kcal:200,p:24,c:8,g:8},
+    ]},
+    {role:"Extra calorico", opts:[
+      {n:"Frutta secca mista", a:"30g", kcal:180,p:6,c:6,g:16},
+      {n:"Burro d'arachidi + banana", a:"20g + 1", kcal:300,p:9,c:35,g:16},
+      {n:"Mandorle + miele", a:"30g + 10g", kcal:210,p:6,c:14,g:15},
+    ]},
+  ]},
+  spuntino1:{ name:"Spuntino mattina", icon:"☕", slots:[
+    {role:"Shake / spuntino", opts:[
+      {n:"Yogurt greco + granola + miele", a:"150g + 40g", kcal:340,p:18,c:42,g:10},
+      {n:"Shaker proteine + latte intero + banana", a:"30g + 500ml + 1", kcal:560,p:42,c:55,g:18},
+      {n:"Pane + burro d'arachidi", a:"80g + 25g", kcal:430,p:14,c:45,g:20},
+    ]},
+  ]},
+  pranzo:{ name:"Pranzo", icon:"🍽️", slots:[
+    {role:"Carboidrato", opts:[
+      {n:"Riso basmati", a:"130g crudo", kcal:460,p:9,c:101,g:1},
+      {n:"Pasta", a:"130g cruda", kcal:455,p:16,c:91,g:2},
+      {n:"Patate", a:"400g", kcal:308,p:8,c:70,g:0},
+      {n:"Couscous", a:"120g crudo", kcal:420,p:14,c:86,g:1},
+      {n:"Pane", a:"150g", kcal:400,p:13,c:80,g:3},
+    ]},
+    {role:"Proteina", opts:[
+      {n:"Pollo", a:"200g", kcal:330,p:62,c:0,g:8},
+      {n:"Tacchino", a:"200g", kcal:300,p:60,c:0,g:6},
+      {n:"Manzo", a:"200g", kcal:380,p:52,c:0,g:18},
+      {n:"Maiale (lonza)", a:"200g", kcal:360,p:54,c:0,g:16},
+      {n:"Salmone", a:"180g", kcal:370,p:40,c:0,g:23},
+      {n:"Tonno", a:"160g", kcal:230,p:42,c:0,g:7},
+      {n:"Uova", a:"3 intere", kcal:230,p:19,c:1,g:16},
+    ]},
+    {role:"Verdura / extra", opts:[
+      {n:"Zucchine in padella", a:"200g", kcal:60,p:3,c:7,g:2},
+      {n:"Peperoni saltati", a:"200g", kcal:80,p:2,c:12,g:2},
+      {n:"Carote", a:"200g", kcal:80,p:2,c:16,g:1},
+      {n:"Piselli", a:"150g", kcal:120,p:8,c:18,g:1},
+      {n:"Insalata mista", a:"abbondante", kcal:40,p:2,c:6,g:1},
+    ]},
+    {role:"Condimento (densità)", opts:[
+      {n:"Olio EVO a crudo", a:"1 cucchiaio", kcal:120,p:0,c:0,g:13},
+      {n:"Olio EVO abbondante", a:"2 cucchiai", kcal:240,p:0,c:0,g:27},
+      {n:"Pesto", a:"40g", kcal:230,p:4,c:3,g:23},
+      {n:"Pomodoro + olio", a:"100g + 1 cucch", kcal:140,p:1,c:6,g:13},
+      {n:"Salsa di soia + olio", a:"+ 1 cucch", kcal:130,p:1,c:3,g:13},
+    ]},
+  ]},
+  spuntino2:{ name:"Spuntino pomeriggio", icon:"🥪", slots:[
+    {role:"Spuntino", opts:[
+      {n:"Shaker proteine + frutto pratico", a:"30g + banana", kcal:280,p:30,c:30,g:4},
+      {n:"Yogurt greco + fiocchi avena + frutta secca + miele", a:"200g+60g+15g", kcal:520,p:28,c:55,g:18},
+      {n:"Pane + bresaola + olio", a:"80g + 80g", kcal:380,p:30,c:42,g:10},
+      {n:"Toast prosciutto e formaggio", a:"2 fette", kcal:420,p:24,c:38,g:20},
+    ]},
+  ]},
+  cena:{ name:"Cena", icon:"🌙", slots:[
+    {role:"Carboidrato", opts:[
+      {n:"Riso basmati", a:"120g crudo", kcal:425,p:8,c:93,g:1},
+      {n:"Pasta", a:"120g cruda", kcal:420,p:15,c:84,g:2},
+      {n:"Patate", a:"400g", kcal:308,p:8,c:70,g:0},
+      {n:"Pane", a:"120g", kcal:320,p:10,c:64,g:2},
+    ]},
+    {role:"Proteina", opts:[
+      {n:"Salmone", a:"180g", kcal:370,p:40,c:0,g:23},
+      {n:"Pollo", a:"200g", kcal:330,p:62,c:0,g:8},
+      {n:"Manzo", a:"200g", kcal:380,p:52,c:0,g:18},
+      {n:"Maiale (lonza)", a:"200g", kcal:360,p:54,c:0,g:16},
+      {n:"Uova + ricotta", a:"3 + 100g", kcal:380,p:30,c:5,g:26},
+      {n:"Tonno", a:"160g", kcal:230,p:42,c:0,g:7},
+    ]},
+    {role:"Verdura / extra", opts:[
+      {n:"Zucchine in padella", a:"200g", kcal:60,p:3,c:7,g:2},
+      {n:"Peperoni saltati", a:"200g", kcal:80,p:2,c:12,g:2},
+      {n:"Piselli", a:"150g", kcal:120,p:8,c:18,g:1},
+      {n:"Carote", a:"200g", kcal:80,p:2,c:16,g:1},
+      {n:"Insalata mista", a:"abbondante", kcal:40,p:2,c:6,g:1},
+    ]},
+    {role:"Condimento (densità)", opts:[
+      {n:"Olio EVO a crudo", a:"1 cucchiaio", kcal:120,p:0,c:0,g:13},
+      {n:"Olio EVO abbondante", a:"2 cucchiai", kcal:240,p:0,c:0,g:27},
+      {n:"Pesto", a:"40g", kcal:230,p:4,c:3,g:23},
+      {n:"Pomodoro + olio", a:"100g + 1 cucch", kcal:140,p:1,c:6,g:13},
+    ]},
+  ]},
+  serale:{ name:"Prima di dormire (opz.)", icon:"😴", slots:[
+    {role:"Opzionale", opts:[
+      {n:"Niente", a:"salto", kcal:0,p:0,c:0,g:0},
+      {n:"Yogurt greco + miele", a:"200g", kcal:240,p:18,c:24,g:8},
+      {n:"Ricotta + miele", a:"200g", kcal:280,p:22,c:18,g:14},
+      {n:"Latte intero + avena", a:"300ml + 30g", kcal:310,p:13,c:34,g:12},
+    ]},
+  ]},
+};
+const MEAL_ORDER=["colazione","spuntino1","pranzo","spuntino2","cena","serale"];
+
 /* ===================== STATO ===================== */
 const KEY="pianoallena_v2";
 function todayKey(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 let DB=load();
 if(!DB.hist)DB.hist={};
+if(!DB.diet)DB.diet={};
 function load(){
   try{const r=localStorage.getItem(KEY);if(r)return JSON.parse(r);}catch(e){}
-  return {rest:{heavy:120,light:60}, days:{}, weights:[], lastLog:{}, hist:{}};
+  return {rest:{heavy:120,light:60}, days:{}, weights:[], lastLog:{}, hist:{}, diet:{}};
 }
 function save(){try{localStorage.setItem(KEY,JSON.stringify(DB));}catch(e){toast("Memoria bloccata");}}
 function today(){const k=todayKey();if(!DB.days[k])DB.days[k]={sets:{}};return DB.days[k];}
@@ -604,15 +807,138 @@ document.getElementById("exportBtn").onclick=()=>{
 document.getElementById("importBtn").onclick=()=>document.getElementById("importFile").click();
 document.getElementById("importFile").onchange=(e)=>{
   const f=e.target.files[0];if(!f)return;const rd=new FileReader();
-  rd.onload=()=>{try{const o=JSON.parse(rd.result);if(o.days&&o.rest){if(!o.hist)o.hist={};DB=o;save();initFields();goTab("oggi");toast("Backup importato");}else toast("File non valido");}catch(x){toast("File non valido");}};
+  rd.onload=()=>{try{const o=JSON.parse(rd.result);if(o.days&&o.rest){if(!o.hist)o.hist={};if(!o.diet)o.diet={};DB=o;save();initFields();goTab("oggi");toast("Backup importato");}else toast("File non valido");}catch(x){toast("File non valido");}};
   rd.readAsText(f);
 };
 document.getElementById("wipeBtn").onclick=()=>{if(confirm("Cancellare tutti i dati? Irreversibile. Esporta prima un backup.")){localStorage.removeItem(KEY);DB=load();initFields();goTab("oggi");toast("Dati cancellati");}};
+
+/* ===================== DIETA ===================== */
+// stato giornaliero: DB.diet[dayKey] = { picks:{mealKey:[optIdxPerSlot]}, eaten:{mealKey:bool} }
+function dietDay(){
+  const k=todayKey();
+  if(!DB.diet[k]){
+    DB.diet[k]={picks:{},eaten:{}};
+    // genera piano base: variante 0 per ogni slot (le ho ordinate mettendo per prima una scelta sensata)
+    MEAL_ORDER.forEach(mk=>{
+      DB.diet[k].picks[mk]=MENU[mk].slots.map(()=>0);
+      DB.diet[k].eaten[mk]=false;
+    });
+    save();
+  }
+  return DB.diet[k];
+}
+function mealTotals(mk,picks){
+  let t={kcal:0,p:0,c:0,g:0};
+  MENU[mk].slots.forEach((slot,si)=>{
+    const o=slot.opts[picks[si]||0];t.kcal+=o.kcal;t.p+=o.p;t.c+=o.c;t.g+=o.g;
+  });
+  return t;
+}
+function dayTotals(dd){
+  let t={kcal:0,p:0,c:0,g:0};
+  MEAL_ORDER.forEach(mk=>{
+    if(dd.eaten[mk]){const mt=mealTotals(mk,dd.picks[mk]);t.kcal+=mt.kcal;t.p+=mt.p;t.c+=mt.c;t.g+=mt.g;}
+  });
+  return t;
+}
+function plannedTotals(dd){
+  let t={kcal:0,p:0,c:0,g:0};
+  MEAL_ORDER.forEach(mk=>{const mt=mealTotals(mk,dd.picks[mk]);t.kcal+=mt.kcal;t.p+=mt.p;t.c+=mt.c;t.g+=mt.g;});
+  return t;
+}
+function renderDieta(){
+  const dd=dietDay();
+  const eatenT=dayTotals(dd), plan=plannedTotals(dd);
+  const g=ENERGY_GOAL;
+  // se non hai ancora spuntato nulla, mostro il PIANIFICATO (così vedi se il piano raggiunge il target)
+  const anyEaten=MEAL_ORDER.some(mk=>dd.eaten[mk]);
+  const show=anyEaten?eatenT:plan;
+  document.getElementById("dietDayLabel").textContent=anyEaten?"mangiato finora":"piano di oggi";
+  document.getElementById("dietKcal").textContent=Math.round(show.kcal);
+  document.getElementById("dietKcalGoal").textContent=g.kcal;
+  const C=257.6, pct=Math.min(show.kcal/g.kcal,1);
+  document.getElementById("energyRing").style.strokeDashoffset=C*(1-pct);
+  [["dp","dpBar","dpGoal",show.p,g.p],["dc","dcBar","dcGoal",show.c,g.c],["dg","dgBar","dgGoal",show.g,g.g]].forEach(([id,bar,goal,val,goalV])=>{
+    document.getElementById(id+"Now").textContent=Math.round(val);
+    document.getElementById(goal).textContent=goalV;
+    document.getElementById(bar).style.width=Math.min(val/goalV*100,100)+"%";
+  });
+  // badge surplus: valuto il PIANO (raggiunge il target?)
+  const badge=document.getElementById("surplusBadge");
+  const planPct=Math.round(plan.kcal/g.kcal*100);
+  if(plan.kcal>=g.kcal-100){
+    badge.innerHTML='<span class="surplus-badge ok">✓ Piano a '+Math.round(plan.kcal)+' kcal — copre il surplus</span>';
+  }else{
+    const miss=g.kcal-plan.kcal;
+    badge.innerHTML='<span class="surplus-badge low">⚠ Piano a '+Math.round(plan.kcal)+' kcal — mancano ~'+Math.round(miss)+' kcal al target</span>';
+  }
+  // blocchi pasto
+  const box=document.getElementById("mealBlocks");box.innerHTML="";
+  MEAL_ORDER.forEach(mk=>{
+    const meal=MENU[mk], picks=dd.picks[mk], eaten=dd.eaten[mk];
+    const mt=mealTotals(mk,picks);
+    const block=document.createElement("div");block.className="meal-block";
+    let html='<div class="meal-block-hd"><span class="mn">'+meal.icon+' '+meal.name+'</span><span class="mk num">'+Math.round(mt.kcal)+' kcal · P'+Math.round(mt.p)+'</span></div>';
+    meal.slots.forEach((slot,si)=>{
+      const o=slot.opts[picks[si]||0];
+      html+='<div class="slot" data-mk="'+mk+'" data-si="'+si+'">'
+        +'<div class="slot-ico">'+meal.icon+'</div>'
+        +'<div class="slot-body"><div class="slot-role">'+slot.role+'</div>'
+        +'<div class="slot-pick">'+o.n+' <span class="amt">'+o.a+'</span></div></div>'
+        +'<div class="slot-swap"><svg viewBox="0 0 24 24"><path d="M16 3l4 4-4 4M20 7H8M8 21l-4-4 4-4M4 17h12"/></svg>cambia</div>'
+        +'</div>';
+    });
+    html+='<div class="meal-eaten'+(eaten?' on':'')+'" data-eat="'+mk+'"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>'+(eaten?'Mangiato':'Segna come mangiato')+'</div>';
+    block.innerHTML=html;
+    box.appendChild(block);
+  });
+  // eventi: swap slot
+  box.querySelectorAll(".slot").forEach(el=>{
+    el.onclick=()=>openSheet(el.dataset.mk,+el.dataset.si);
+  });
+  box.querySelectorAll(".meal-eaten").forEach(el=>{
+    el.onclick=()=>{const mk=el.dataset.eat;dd.eaten[mk]=!dd.eaten[mk];save();renderDieta();toast(dd.eaten[mk]?"Pasto aggiunto al totale":"Pasto tolto");};
+  });
+}
+// sheet selettore varianti
+let sheetCtx=null;
+function openSheet(mk,si){
+  sheetCtx={mk,si};
+  const slot=MENU[mk].slots[si];
+  const dd=dietDay();const cur=dd.picks[mk][si]||0;
+  document.getElementById("sheetTitle").textContent=slot.role;
+  const box=document.getElementById("sheetOpts");box.innerHTML="";
+  slot.opts.forEach((o,oi)=>{
+    const el=document.createElement("div");el.className="opt";
+    el.innerHTML='<div class="opt-check'+(oi===cur?' on':'')+'"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>'
+      +'<div class="opt-body"><div class="opt-name">'+o.n+'</div><div class="opt-macros">'+o.a+' · '+o.kcal+' kcal · P'+o.p+' C'+o.c+' G'+o.g+'</div></div>';
+    el.onclick=()=>{dd.picks[mk][si]=oi;save();closeSheet();renderDieta();};
+    box.appendChild(el);
+  });
+  document.getElementById("sheetBg").classList.add("show");
+  document.getElementById("sheet").classList.add("show");
+}
+function closeSheet(){
+  document.getElementById("sheetBg").classList.remove("show");
+  document.getElementById("sheet").classList.remove("show");
+}
+document.getElementById("sheetBg").onclick=closeSheet;
+document.getElementById("rerollDiet").onclick=()=>{
+  const dd=dietDay();
+  MEAL_ORDER.forEach(mk=>{
+    dd.picks[mk]=MENU[mk].slots.map(slot=>Math.floor(Math.random()*slot.opts.length));
+  });
+  save();renderDieta();toast("Giornata rigenerata 🎲");
+};
+document.getElementById("resetDiet").onclick=()=>{
+  const dd=dietDay();MEAL_ORDER.forEach(mk=>dd.eaten[mk]=false);save();renderDieta();toast("Spunte azzerate");
+};
 
 /* ===================== NAV ===================== */
 const TABS=[
   {id:"oggi",label:"Oggi",icon:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'},
   {id:"allena",label:"Allena",icon:'<path d="M6 7v10M18 7v10M4 9h4M16 9h4M8 12h8"/>'},
+  {id:"dieta",label:"Dieta",icon:'<path d="M6 3v7a3 3 0 0 0 6 0V3M9 3v18M18 3c-1.5 1-2 3-2 6s.5 5 2 6V3z"/>'},
   {id:"peso",label:"Peso",icon:'<path d="M4 19h16M6 19V9l6-4 6 4v10"/><path d="M9 19v-5h6v5"/>'},
   {id:"impo",label:"Setup",icon:'<circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.3 1a7 7 0 0 0-1.7-1l-.3-2.5H9.4l-.3 2.5a7 7 0 0 0-1.7 1l-2.3-1-2 3.4 2 1.5a7 7 0 0 0 0 2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 1.7 1l.3 2.5h5.2l.3-2.5a7 7 0 0 0 1.7-1l2.3 1 2-3.4-2-1.5c.1-.3.1-.7.1-1z"/>'},
 ];
@@ -625,7 +951,7 @@ function goTab(id){
   document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id==="view-"+id));
   document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t.dataset.tab===id));
   window.scrollTo(0,0);
-  if(id==="oggi")renderOggi();if(id==="allena")renderWorkout();if(id==="peso")renderWeight();
+  if(id==="oggi")renderOggi();if(id==="allena")renderWorkout();if(id==="dieta")renderDieta();if(id==="peso")renderWeight();
 }
 window.goTab=goTab;
 
