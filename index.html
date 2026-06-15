@@ -371,6 +371,7 @@
         </div>
       </div>
       <div id="surplusBadge" style="margin-top:12px;"></div>
+      <button class="reset-day" id="editGoal" style="margin-top:10px;padding:10px;font-size:12.5px;">⚙︎ Modifica calorie obiettivo</button>
     </div>
     <div class="tip" id="dietTip"><b>Come funziona:</b> tocca "cambia ricetta" per scegliere tra 6 varianti, oppure scambia (⇄) e regola la quantità di ogni singolo ingrediente. Puoi aggiungere ingredienti e pasti extra: l'app stima calorie e macro. Spunta "mangiato" per sommarlo al totale.</div>
     <div id="mealBlocks"></div>
@@ -541,7 +542,7 @@ const WORKOUTS = {
   C:{label:"Ven · C", tip:"<b>Full-body C.</b> Oggi giochi col tempo: discese lentissime per rendere tutto più duro senza aggiungere peso.",
     slots:["squat_lento","pike_rialzati","affondi_camm","pushup_board_larga","ponte_unagamba","superman"]},
 };
-const DAY_MAP={1:"A",3:"B",5:"C"};
+const DAY_MAP={1:"A",3:"B",5:"C"}; // legacy: usato solo come riferimento storico, la mappatura giorni avviene in todaysDayId()
 // attrezzatura disponibile (default: ciò che l'utente ha ora). "corpo" sempre attivo.
 function availEquip(){
   if(!DB.equip)DB.equip=["corpo","board","zaino"];
@@ -564,7 +565,11 @@ function exAlternatives(exId){
    FOODS: dispensa con macro per 100g (o per unità). u = unità di misura mostrata.
    step = incremento grammi suggerito. unit:"pz" => si conta a pezzi (es. uova, piadine).
    cat = categoria, usata per proporre alternative coerenti quando scambi un ingrediente. */
-const ENERGY_GOAL={kcal:3200,p:160,c:400,g:88};
+const ENERGY_GOAL_DEFAULT={kcal:3200,p:160,c:400,g:88};
+function energyGoal(){
+  if(!DB.energyGoal)DB.energyGoal={...ENERGY_GOAL_DEFAULT};
+  return DB.energyGoal;
+}
 const FOODS={
   // --- cereali / carboidrati (per 100g a crudo dove ha senso) ---
   riso:{n:"Riso basmati",cat:"carbo",per:100,kcal:350,p:7,c:78,g:1,step:20,note:"crudo"},
@@ -712,12 +717,37 @@ if(!DB.diet)DB.diet={};
 if(!DB.equip)DB.equip=["corpo","board","zaino"];
 if(!DB.reminders)DB.reminders={water:8, creatine:true};
 if(!DB.custom)DB.custom={};
+if(!DB.energyGoal)DB.energyGoal={...ENERGY_GOAL_DEFAULT};
 // applica il piano A/B/C generato in precedenza, se presente
 if(DB.genPlan){
   ["A","B","C"].forEach(d=>{ if(DB.genPlan[d]&&DB.genPlan[d].length) WORKOUTS[d].slots=DB.genPlan[d]; });
 }
 // unisci alimenti personalizzati salvati dall'utente nella dispensa
 Object.keys(DB.custom).forEach(id=>{ if(!FOODS[id]) FOODS[id]=DB.custom[id]; });
+// esercizi personalizzati creati dall'utente -> uniti al catalogo
+if(!DB.customEx)DB.customEx={};
+Object.keys(DB.customEx).forEach(id=>{ EXERCISES[id]=DB.customEx[id]; });
+// override dei parametri (serie/rip/riposo) per esercizio, applicati a getEx
+if(!DB.exOverride)DB.exOverride={};
+// giorni di allenamento dinamici con nome. Seed dai 3 giorni A/B/C alla prima apertura.
+if(!DB.workoutDays){
+  DB.workoutDays=["A","B","C"].map(k=>({
+    id:k,
+    name:WORKOUTS[k].label.split(" · ")[1]||k,
+    tip:WORKOUTS[k].tip,
+    slots:(DB.genPlan&&DB.genPlan[k]&&DB.genPlan[k].length)?DB.genPlan[k].slice():WORKOUTS[k].slots.slice()
+  }));
+}
+// accessore esercizio con override applicati (sets/rep/rest)
+function getEx(id){
+  const base=EXERCISES[id];if(!base)return null;
+  const ov=DB.exOverride[id];
+  if(!ov)return base;
+  return {...base, sets:ov.sets!=null?ov.sets:base.sets, rep:ov.rep!=null?ov.rep:base.rep, rest:ov.rest!=null?ov.rest:base.rest};
+}
+// lista giorni (oggetti {id,name,slots})
+function getDays(){ if(!DB.workoutDays)DB.workoutDays=[]; return DB.workoutDays; }
+function getDay(id){ return getDays().find(d=>d.id===id); }
 function load(){
   try{const r=localStorage.getItem(KEY);if(r)return JSON.parse(r);}catch(e){}
   return {rest:{heavy:120,light:60}, days:{}, weights:[], lastLog:{}, hist:{}, diet:{}};
@@ -727,10 +757,11 @@ function today(){const k=todayKey();if(!DB.days[k])DB.days[k]={sets:{},slots:{}}
 // esercizi scelti oggi per la scheda: default dalla scheda, con fallback se l'attrezzatura non c'è
 function daySlots(dayKey){
   const d=today();
+  const day=getDay(dayKey);
+  if(!day)return [];
   if(!d.slots[dayKey]){
-    d.slots[dayKey]=WORKOUTS[dayKey].slots.map(exId=>{
+    d.slots[dayKey]=day.slots.map(exId=>{
       if(exAvailable(exId))return exId;
-      // fallback: prima alternativa disponibile dello stesso gruppo
       const alt=exAlternatives(exId)[0];
       return alt||exId;
     });
@@ -766,7 +797,8 @@ function exSets(dayKey,slotIdx){
   const d=today();const id=dayKey+":"+slotIdx;
   const exId=daySlots(dayKey)[slotIdx];
   if(!d.sets[id]){
-    const n=EXERCISES[exId]?EXERCISES[exId].sets:3;
+    const ex=getEx(exId);
+    const n=ex?ex.sets:3;
     d.sets[id]=Array.from({length:n},()=>({w:"",r:"",done:false}));
   }
   return d.sets[id];
@@ -814,6 +846,15 @@ document.getElementById("restMinus").onclick=()=>{restLeft=Math.max(0,restLeft-1
 document.getElementById("restSkip").onclick=stopRest;
 
 /* ===================== OGGI ===================== */
+// mappa il giorno della settimana a un giorno della scheda (Lun→1°, Mer→2°, Ven→3°)
+function todaysDayId(){
+  const days=getDays();if(!days.length)return null;
+  const wd=new Date().getDay();
+  const map={1:0,3:1,5:2};
+  const idx=map[wd];
+  if(idx===undefined)return null;
+  return days[idx]?days[idx].id:null;
+}
 function dayDone(dayKey){
   const d=today();let total=0,done=0;
   daySlots(dayKey).forEach((exId,i)=>{
@@ -822,31 +863,32 @@ function dayDone(dayKey){
   return {total,done};
 }
 function renderOggi(){
-  const wd=new Date().getDay();const key=DAY_MAP[wd];
+  const dayId=todaysDayId();
   const titleEl=document.getElementById("todayTitle");
   const sideEl=document.getElementById("todaySide");
   const countEl=document.getElementById("todayCount");
   const startBtn=document.getElementById("startToday");
   const C=282.7;
-  if(!key){
+  const days=getDays();
+  if(!dayId){
     titleEl.textContent="Riposo";
     document.getElementById("dayPct").textContent="—";
     document.getElementById("dayRing").style.strokeDashoffset=C;
     countEl.textContent="";
     sideEl.innerHTML='<div class="big">Oggi è recupero 💤</div><div class="sub">Passeggiate col cane sì. Il muscolo cresce nei giorni di riposo: dormi 7-9 ore.</div>';
     startBtn.textContent="Guarda comunque una scheda →";
-    startBtn.onclick=()=>{currentDay="A";goTab("allena");};
+    startBtn.onclick=()=>{currentDay=(days[0]&&days[0].id)||null;goTab("allena");};
   }else{
-    const w=WORKOUTS[key];const {total,done}=dayDone(key);
+    const day=getDay(dayId);const {total,done}=dayDone(dayId);
     const pct=total?Math.round(done/total*100):0;
-    titleEl.textContent=w.label.split(" · ")[1]+" — Full body";
+    titleEl.textContent=day.name;
     document.getElementById("dayPct").textContent=pct+"%";
     document.getElementById("dayRing").style.strokeDashoffset=C*(1-pct/100);
     countEl.textContent=done+"/"+total+" serie";
-    const nEx=daySlots(key).length;
+    const nEx=daySlots(dayId).length;
     sideEl.innerHTML='<div class="big">'+nEx+' esercizi · '+total+' serie</div><div class="sub">'+(done===0?"Non ancora iniziato. Quando spunti una serie parte il timer di recupero.":done===total?"Sessione completata 💪 Bel lavoro.":"In corso: "+done+" serie fatte, continua.")+'</div>';
     startBtn.textContent=done===0?"Inizia la scheda di oggi →":done===total?"Rivedi la scheda →":"Riprendi la scheda →";
-    startBtn.onclick=()=>{currentDay=key;goTab("allena");};
+    startBtn.onclick=()=>{currentDay=dayId;goTab("allena");};
   }
   renderRecent();
   renderReminders();
@@ -898,17 +940,25 @@ function renderRecent(){
 }
 
 /* ===================== ALLENA ===================== */
-let currentDay=DAY_MAP[new Date().getDay()]||"A";
+let currentDay=(getDays()[0]&&getDays()[0].id)||null;
 function renderDayTabs(){
   const tt=document.getElementById("dayTabs");tt.innerHTML="";
-  const todayK=DAY_MAP[new Date().getDay()];
-  Object.keys(WORKOUTS).forEach(k=>{
+  const todayId=todaysDayId();
+  const days=getDays();
+  // se currentDay non è più valido, ripiega sul primo
+  if(!getDay(currentDay)&&days.length)currentDay=days[0].id;
+  days.forEach(day=>{
     const el=document.createElement("div");
-    el.className="day-tab"+(k===currentDay?" active":"")+(k===todayK?" today":"");
-    el.textContent=WORKOUTS[k].label;
-    el.onclick=()=>{currentDay=k;renderWorkout();};
+    el.className="day-tab"+(day.id===currentDay?" active":"")+(day.id===todayId?" today":"");
+    el.textContent=day.name;
+    el.onclick=()=>{currentDay=day.id;renderWorkout();};
     tt.appendChild(el);
   });
+  // pulsante aggiungi giorno
+  const add=document.createElement("div");
+  add.className="day-tab";add.style.flex="0 0 auto";add.style.color="var(--accent)";add.textContent="+";
+  add.onclick=addWorkoutDay;
+  tt.appendChild(add);
 }
 function exRing(done,total){
   const r=12,c=2*Math.PI*r,pct=total?done/total:0;
@@ -949,15 +999,20 @@ function renderWarmup(list){
 }
 function renderWorkout(){
   renderDayTabs();
-  const w=WORKOUTS[currentDay];
-  document.getElementById("dayTip").innerHTML=w.tip;
-  const slots=daySlots(currentDay);
+  const day=getDay(currentDay);
   const list=document.getElementById("exerciseList");list.innerHTML="";
+  if(!day){
+    document.getElementById("dayTip").innerHTML="";
+    list.innerHTML='<div class="empty" style="padding:30px 20px;">Nessun giorno di allenamento. Tocca <b>+</b> per crearne uno.</div>';
+    return;
+  }
+  document.getElementById("dayTip").innerHTML=day.tip||("<b>"+day.name+".</b> Apri un esercizio per registrare le serie. Tocca ⚙ per modificarne i parametri o ⇄ per cambiarlo.");
+  const slots=daySlots(currentDay);
   renderWarmup(list);
   slots.forEach((exId,i)=>{
-    const e=EXERCISES[exId]||{n:"?",sets:3,rep:"",note:"",g:"",heavy:false};
-    const setKey=currentDay+":"+i;            // chiave serie del giorno
-    const logId=exId;                          // log/storico per ESERCIZIO (segue lo swap)
+    const e=getEx(exId)||{n:"?",sets:3,rep:"",note:"",g:"",heavy:false};
+    const setKey=currentDay+":"+i;
+    const logId=exId;
     const sets=exSets(currentDay,i);
     const done=sets.filter(s=>s.done).length;
     const last=DB.lastLog[logId];
@@ -973,22 +1028,20 @@ function renderWorkout(){
         +'</div>';
     });
     const grpLabel=GROUPS[e.g]||"";
+    const restLabel = (e.rest!==undefined&&e.rest!==null&&e.rest!=="") ? (" · riposo "+e.rest+"s") : "";
     card.innerHTML=
       '<div class="ex-hd"><div class="ex-ring'+(done===sets.length?" done":"")+'">'+exRing(done,sets.length)+'<div class="n num">'+done+'/'+sets.length+'</div></div>'
-      +'<div class="ex-info"><div class="ex-name">'+e.n+'</div><div class="ex-meta">'+grpLabel+' · '+e.sets+' serie × '+e.rep+'</div></div>'
+      +'<div class="ex-info"><div class="ex-name">'+e.n+'</div><div class="ex-meta">'+grpLabel+' · '+e.sets+' serie × '+e.rep+restLabel+'</div></div>'
       +'<div class="ex-toggle">+</div></div>'
       +'<div class="ex-detail"><div class="ex-detail-in">'
-      +'<div class="ex-swap-bar" data-slot="'+i+'"><span>'+grpLabel+'</span><span class="ex-swap-act">⇄ cambia esercizio</span></div>'
-      +'<div class="ex-note">'+e.note+'</div>'
+      +'<div class="ex-swap-bar" data-slot="'+i+'"><span>'+grpLabel+'</span><span class="ex-swap-act">⇄ cambia · ⚙ modifica · ✕ rimuovi</span></div>'
+      +'<div class="ex-note">'+(e.note||"")+'</div>'
       +(last&&last.best?'<div class="last-hint">Ultima volta: <b>'+last.best+'</b> · '+last.date+'</div>':'<div class="last-hint">Prima volta su questo esercizio — i numeri di oggi diventano il tuo riferimento.</div>')
       +setsHtml
       +strengthSpark(logId)
       +'</div></div>';
-    // expand
     card.querySelector(".ex-hd").onclick=(ev)=>{if(ev.target.closest(".set"))return;card.classList.toggle("open");};
-    // cambia esercizio
-    card.querySelector(".ex-swap-bar").onclick=(ev)=>{ev.stopPropagation();openExerciseSwap(currentDay,i);};
-    // inputs
+    card.querySelector(".ex-swap-bar").onclick=(ev)=>{ev.stopPropagation();openExerciseActions(currentDay,i);};
     card.querySelectorAll(".sw").forEach(inp=>inp.onchange=()=>{sets[+inp.dataset.si].w=inp.value;save();});
     card.querySelectorAll(".sr").forEach(inp=>inp.onchange=()=>{sets[+inp.dataset.si].r=inp.value;save();});
     card.querySelectorAll(".set-done").forEach(btn=>{
@@ -1000,8 +1053,9 @@ function renderWorkout(){
           const sw=card.querySelector('.sw[data-si="'+si+'"]'),sr=card.querySelector('.sr[data-si="'+si+'"]');
           s.w=sw.value;s.r=sr.value;
           updateLastLog(setKey,logId,e.n);
-          if(si<sets.length-1){startRest(e.heavy?DB.rest.heavy:DB.rest.light);}
-          else{stopRest();toast("Esercizio completato 💪");}
+          const restSec = (e.rest!==undefined&&e.rest!==null&&e.rest!=="") ? +e.rest : (e.heavy?DB.rest.heavy:DB.rest.light);
+          startRest(restSec);
+          if(si===sets.length-1)toast("Esercizio completato 💪");
         }
         save();renderWorkout();
         const cards=list.querySelectorAll(".ex");if(cards[i])cards[i].classList.add("open");
@@ -1009,8 +1063,41 @@ function renderWorkout(){
     });
     list.appendChild(card);
   });
+  // pulsante aggiungi esercizio al giorno
+  const addEx=document.createElement("button");addEx.className="reset-day";addEx.style.cssText="border-color:var(--accent);color:var(--accent);margin-bottom:8px;";
+  addEx.textContent="+ Aggiungi esercizio a "+day.name;
+  addEx.onclick=()=>openAddExercise(currentDay);
+  list.appendChild(addEx);
+  // genera piano per questo giorno
+  const gen=document.createElement("button");gen.className="reset-day";gen.style.marginBottom="8px";
+  gen.textContent="⚡ Rigenera questo giorno in base all'attrezzatura";
+  gen.onclick=()=>{if(generateDay(currentDay)){renderWorkout();toast("Giorno rigenerato 💪");}};
+  list.appendChild(gen);
+  // controlli giorno: rinomina / elimina
+  const ctrl=document.createElement("div");ctrl.style.cssText="display:flex;gap:8px;margin-bottom:8px;";
+  const ren=document.createElement("button");ren.className="reset-day";ren.style.flex="1";ren.textContent="✎ Rinomina giorno";
+  ren.onclick=()=>renameDay(currentDay);
+  const del=document.createElement("button");del.className="reset-day";del.style.cssText="flex:1;color:#ff6b6b;";del.textContent="🗑 Elimina giorno";
+  del.onclick=()=>deleteDay(currentDay);
+  ctrl.appendChild(ren);ctrl.appendChild(del);list.appendChild(ctrl);
 }
 // selettore di scambio esercizio (stesso gruppo, filtrato per attrezzatura)
+// menu azioni esercizio: cambia / modifica parametri / rimuovi
+function openExerciseActions(dayKey,slotIdx){
+  const slots=daySlots(dayKey);const curId=slots[slotIdx];const cur=getEx(curId);
+  let html='<div class="opt" id="actSwap"><div class="opt-body"><div class="opt-name">⇄ Cambia esercizio</div><div class="opt-macros">scegli un\'alternativa dello stesso gruppo</div></div></div>'
+    +'<div class="opt" id="actEdit"><div class="opt-body"><div class="opt-name">⚙ Modifica parametri</div><div class="opt-macros">serie, ripetizioni e tempo di riposo</div></div></div>'
+    +'<div class="opt" id="actDel"><div class="opt-body"><div class="opt-name" style="color:#ff6b6b;">✕ Rimuovi dal giorno</div><div class="opt-macros">togli questo esercizio dalla scheda</div></div></div>';
+  showSheet(cur.n,html);
+  document.getElementById("actSwap").onclick=()=>{closeSheet();setTimeout(()=>openExerciseSwap(dayKey,slotIdx),60);};
+  document.getElementById("actEdit").onclick=()=>{closeSheet();setTimeout(()=>editExerciseParams(curId),60);};
+  document.getElementById("actDel").onclick=()=>{
+    const day=getDay(dayKey);day.slots.splice(slotIdx,1);
+    // riallinea gli slot della giornata di oggi
+    delete today().slots[dayKey];
+    DB.workoutDays=getDays();save();closeSheet();renderWorkout();toast("Esercizio rimosso");
+  };
+}
 function openExerciseSwap(dayKey,slotIdx){
   const slots=daySlots(dayKey);const curId=slots[slotIdx];
   const alts=exAlternatives(curId);
@@ -1019,17 +1106,163 @@ function openExerciseSwap(dayKey,slotIdx){
     html='<div class="empty" style="padding:20px;">Nessuna alternativa disponibile per questo gruppo con l\'attrezzatura selezionata.<br>Aggiungi attrezzatura in Setup per sbloccare più esercizi.</div>';
   }
   alts.forEach(aid=>{
-    const a=EXERCISES[aid];
+    const a=getEx(aid);
     html+='<div class="opt" data-ex="'+aid+'"><div class="opt-check'+(aid===curId?' on':'')+'"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>'
       +'<div class="opt-body"><div class="opt-name">'+a.n+'</div><div class="opt-macros">'+a.sets+' serie × '+a.rep+' · '+a.equip.map(t=>{const eq=EQUIP_ALL.find(x=>x.id===t);return eq?eq.n:t;}).join(", ")+'</div></div></div>';
   });
-  showSheet((GROUPS[EXERCISES[curId].g]||"")+" — scegli esercizio",html);
+  showSheet((GROUPS[getEx(curId).g]||"")+" — scegli esercizio",html);
   document.querySelectorAll('#sheetOpts .opt').forEach(el=>el.onclick=()=>{
-    const newId=el.dataset.ex;slots[slotIdx]=newId;
-    // resetta le serie del giorno per questo slot (nuovo esercizio = nuove serie)
+    const newId=el.dataset.ex;
+    const day=getDay(dayKey);day.slots[slotIdx]=newId;DB.workoutDays=getDays();
+    daySlots(dayKey)[slotIdx]=newId;
     delete today().sets[dayKey+":"+slotIdx];
     save();closeSheet();renderWorkout();
   });
+}
+// modifica serie / ripetizioni / riposo di un esercizio (salvato come override)
+function editExerciseParams(exId){
+  const e=getEx(exId);
+  const ov=DB.exOverride[exId]||{};
+  const html='<div class="cf-form">'
+    +'<div style="font-size:13px;color:var(--muted);">Modifica i parametri di <b>'+e.n+'</b>. Valgono ovunque appaia questo esercizio.</div>'
+    +'<label style="font-size:12px;color:var(--faint);">Serie</label>'
+    +'<input id="epSets" type="number" inputmode="numeric" value="'+e.sets+'">'
+    +'<label style="font-size:12px;color:var(--faint);">Ripetizioni (es. 8-12, max, 30s)</label>'
+    +'<input id="epRep" type="text" value="'+(e.rep||"")+'">'
+    +'<label style="font-size:12px;color:var(--faint);">Tempo di riposo in secondi (vuoto = automatico)</label>'
+    +'<input id="epRest" type="number" inputmode="numeric" value="'+(e.rest!=null?e.rest:"")+'" placeholder="es. 90">'
+    +'<button class="btn" id="epSave" style="width:100%;padding:13px;">Salva parametri</button></div>';
+  showSheet("Modifica parametri",html);
+  document.getElementById("epSave").onclick=()=>{
+    const sets=Math.max(1,Math.min(10,+document.getElementById("epSets").value||e.sets));
+    const rep=document.getElementById("epRep").value.trim()||e.rep;
+    const restRaw=document.getElementById("epRest").value.trim();
+    const rest=restRaw===""?null:Math.max(0,+restRaw||0);
+    DB.exOverride[exId]={sets:sets, rep:rep, rest:rest};
+    // se è un esercizio custom, aggiorno direttamente anche la sua definizione
+    if(DB.customEx[exId]){DB.customEx[exId].sets=sets;DB.customEx[exId].rep=rep;DB.customEx[exId].rest=rest;EXERCISES[exId]=DB.customEx[exId];}
+    // azzera le serie già istanziate oggi per riflettere il nuovo numero
+    const t=today();Object.keys(t.sets||{}).forEach(k=>{const idx=daySlots(currentDay).indexOf(exId);if(k===currentDay+":"+idx)delete t.sets[k];});
+    save();closeSheet();renderWorkout();toast("Parametri aggiornati");
+  };
+}
+// aggiungi esercizio al giorno: da catalogo disponibile o creane uno nuovo
+function openAddExercise(dayKey){
+  const day=getDay(dayKey);
+  const byGroup={};Object.keys(GROUPS).forEach(g=>byGroup[g]=[]);
+  Object.keys(EXERCISES).forEach(id=>{ if(exAvailable(id))byGroup[EXERCISES[id].g].push(id); });
+  let html='<div class="opt" id="newExBtn" style="border-bottom:1px solid var(--line);"><div class="opt-body"><div class="opt-name" style="color:var(--accent);">+ Crea nuovo esercizio</div><div class="opt-macros">nome, descrizione, serie, rip, riposo</div></div></div>';
+  Object.keys(GROUPS).forEach(g=>{
+    if(!byGroup[g].length)return;
+    html+='<div class="food-cat">'+GROUPS[g]+'</div>';
+    byGroup[g].forEach(id=>{const a=getEx(id);
+      html+='<div class="opt ex-add-opt" data-ex="'+id+'"><div class="opt-body"><div class="opt-name">'+a.n+'</div><div class="opt-macros">'+a.sets+' serie × '+a.rep+'</div></div><div style="color:var(--accent);font-size:20px;">+</div></div>';
+    });
+  });
+  showSheet("Aggiungi esercizio",html);
+  document.getElementById("newExBtn").onclick=()=>{closeSheet();setTimeout(()=>openNewExerciseForm(dayKey),60);};
+  document.querySelectorAll('#sheetOpts .ex-add-opt').forEach(el=>el.onclick=()=>{
+    day.slots.push(el.dataset.ex);DB.workoutDays=getDays();delete today().slots[dayKey];
+    save();closeSheet();renderWorkout();toast("Esercizio aggiunto");
+  });
+}
+// crea esercizio personalizzato
+function openNewExerciseForm(dayKey){
+  let gopts=Object.keys(GROUPS).map(g=>'<option value="'+g+'">'+GROUPS[g]+'</option>').join("");
+  let eopts=EQUIP_ALL.map(e=>'<option value="'+e.id+'">'+e.n+'</option>').join("");
+  const html='<div class="cf-form">'
+    +'<input id="neName" placeholder="Nome esercizio (es. Affondi laterali)">'
+    +'<label style="font-size:12px;color:var(--faint);">Gruppo muscolare</label><select id="neGroup">'+gopts+'</select>'
+    +'<label style="font-size:12px;color:var(--faint);">Attrezzatura richiesta</label><select id="neEquip">'+eopts+'</select>'
+    +'<textarea id="neNote" placeholder="Descrizione: come posizionare il corpo, esecuzione..." style="background:var(--surface2);border:1px solid var(--line);border-radius:9px;color:var(--ink);padding:12px;font-size:15px;min-height:72px;resize:vertical;"></textarea>'
+    +'<div class="cf-macros"><input id="neSets" type="number" inputmode="numeric" placeholder="Serie" value="3"><input id="neRep" type="text" placeholder="Rip (8-12)" value="8-12"><input id="neRest" type="number" inputmode="numeric" placeholder="Riposo s"></div>'
+    +'<button class="btn" id="neSave" style="width:100%;padding:13px;">Crea e aggiungi al giorno</button></div>';
+  showSheet("Nuovo esercizio",html);
+  document.getElementById("neSave").onclick=()=>{
+    const name=document.getElementById("neName").value.trim();
+    if(!name){toast("Inserisci un nome");return;}
+    const g=document.getElementById("neGroup").value;
+    const eq=document.getElementById("neEquip").value;
+    const note=document.getElementById("neNote").value.trim();
+    const sets=Math.max(1,Math.min(10,+document.getElementById("neSets").value||3));
+    const rep=document.getElementById("neRep").value.trim()||"8-12";
+    const restRaw=document.getElementById("neRest").value.trim();
+    const rest=restRaw===""?null:Math.max(0,+restRaw||0);
+    const id="cex_"+name.toLowerCase().replace(/[^a-z0-9]/g,"").slice(0,14)+"_"+Date.now().toString().slice(-4);
+    const ex={n:name,g:g,equip:eq==="corpo"?["corpo"]:[eq],sets:sets,rep:rep,rest:rest,note:note||"Esercizio personalizzato.",custom:true};
+    EXERCISES[id]=ex;DB.customEx[id]=ex;
+    const day=getDay(dayKey);day.slots.push(id);DB.workoutDays=getDays();delete today().slots[dayKey];
+    save();closeSheet();renderWorkout();toast("Esercizio creato e aggiunto");
+  };
+}
+// ---- GESTIONE GIORNI ----
+function addWorkoutDay(){
+  const html='<div class="cf-form">'
+    +'<div style="font-size:13px;color:var(--muted);">Crea un nuovo giorno di allenamento. Potrai generare un piano in base all\'attrezzatura, e aggiungere/modificare esercizi.</div>'
+    +'<input id="ndName" placeholder="Nome giorno (es. Gambe, Upper, Spinta)">'
+    +'<button class="btn" id="ndSave" style="width:100%;padding:13px;">Crea giorno</button>'
+    +'<div class="booster" style="margin-top:6px;">💡 Per un principiante, 3 giorni full-body sono già vicini all\'ottimo. Più giorni non significano più muscolo: conta il recupero e il mangiare.</div></div>';
+  showSheet("Nuovo giorno",html);
+  document.getElementById("ndSave").onclick=()=>{
+    const name=document.getElementById("ndName").value.trim();
+    if(!name){toast("Inserisci un nome");return;}
+    const id="d_"+Date.now().toString().slice(-6);
+    getDays().push({id:id,name:name,tip:"<b>"+name+".</b> Tocca ⚡ per generare un piano, o aggiungi gli esercizi a mano.",slots:[]});
+    DB.workoutDays=getDays();currentDay=id;save();closeSheet();
+    generateDay(id);   // proponi subito un piano in base all'attrezzatura
+    renderWorkout();toast("Giorno '"+name+"' creato");
+  };
+}
+function renameDay(dayKey){
+  const day=getDay(dayKey);if(!day)return;
+  const html='<div class="cf-form"><input id="rnName" value="'+day.name.replace(/"/g,"&quot;")+'"><button class="btn" id="rnSave" style="width:100%;padding:13px;">Salva nome</button></div>';
+  showSheet("Rinomina giorno",html);
+  document.getElementById("rnSave").onclick=()=>{
+    const name=document.getElementById("rnName").value.trim();if(!name){toast("Nome non valido");return;}
+    day.name=name;DB.workoutDays=getDays();save();closeSheet();renderWorkout();toast("Giorno rinominato");
+  };
+}
+function deleteDay(dayKey){
+  const days=getDays();
+  if(days.length<=1){toast("Deve restare almeno un giorno");return;}
+  const day=getDay(dayKey);
+  if(!confirm("Eliminare il giorno '"+day.name+"'? Le serie registrate per oggi su questo giorno andranno perse."))return;
+  DB.workoutDays=days.filter(d=>d.id!==dayKey);
+  // pulizia slot/serie odierni
+  const t=today();if(t.slots)delete t.slots[dayKey];
+  Object.keys(t.sets||{}).forEach(k=>{if(k.indexOf(dayKey+":")===0)delete t.sets[k];});
+  currentDay=DB.workoutDays[0].id;save();renderWorkout();toast("Giorno eliminato");
+}
+// genera/rigenera UN giorno in base all'attrezzatura (full-body bilanciato)
+function generateDay(dayKey){
+  const pool=poolByGroup();
+  const essential=["gambe","petto","schiena","core"];
+  if(essential.some(g=>!pool[g].length)){
+    const miss=essential.filter(g=>!pool[g].length).map(g=>GROUPS[g]).join(", ");
+    toast("Manca attrezzatura per: "+miss);return false;
+  }
+  const used={};
+  function pick(group,wantTier){
+    let list=pool[group];if(!list.length)return null;
+    let cand=list.filter(id=>exTier(id)===wantTier);
+    if(!cand.length)cand=list.filter(id=>exTier(id)<=wantTier);
+    if(!cand.length)cand=list.slice();
+    cand.sort((a,b)=>((used[a]||0)-(used[b]||0))||exTier(a)-exTier(b)||exSetsCount(b)-exSetsCount(a));
+    const ch=cand[0];used[ch]=(used[ch]||0)+1;return ch;
+  }
+  const template=[{g:"gambe",t:1},{g:"petto",t:1},{g:"schiena",t:1},{g:"spalle",t:2},{g:"glutei",t:2},{g:"core",t:3}];
+  let slots=template.map(r=>{const g=pool[r.g].length?r.g:essential.find(x=>pool[x].length);return pick(g,r.t);}).filter(Boolean);
+  // ordina: compound pesanti davanti, core ultimo
+  const ORDER={gambe:0,petto:1,schiena:2,spalle:3,glutei:4,braccia:5,core:99};
+  slots.sort((a,b)=>{
+    const ca=EXERCISES[a].g==="core",cb=EXERCISES[b].g==="core";if(ca!==cb)return ca?1:-1;if(ca&&cb)return 0;
+    const ta=exTier(a)===1?0:1,tb=exTier(b)===1?0:1;if(ta!==tb)return ta-tb;
+    const oa=ORDER[EXERCISES[a].g],ob=ORDER[EXERCISES[b].g];return (oa===undefined?9:oa)-(ob===undefined?9:ob);
+  });
+  const day=getDay(dayKey);day.slots=slots;DB.workoutDays=getDays();
+  delete today().slots[dayKey];
+  Object.keys(today().sets||{}).forEach(k=>{if(k.indexOf(dayKey+":")===0)delete today().sets[k];});
+  save();return true;
 }
 function updateLastLog(setKey,logId,name){
   const d=today();const sets=d.sets[setKey];
@@ -1100,16 +1333,6 @@ function exTier(id){
 }
 // numero di serie di un esercizio (per contare il volume settimanale)
 function exSetsCount(id){return (EXERCISES[id]&&EXERCISES[id].sets)||3;}
-/* Struttura settimanale ottimizzata per ipertrofia (full-body ×3):
-   ogni giorno = COMPOUND GAMBE (primo, fresco) + SPINTA (petto) + TIRATA (schiena)
-                 + ACCESSORIO che ruota (spalle/glutei/braccia) + 2° GAMBE o complementare + CORE (ultimo).
-   La rotazione distribuisce il volume e dà a ogni gruppo 2-3 stimoli/settimana a intensità variata. */
-const DAY_PLANS={
-  // role: gruppo + se serve compound (c) o accessorio (a)
-  A:[{g:"gambe",t:1},{g:"petto",t:1},{g:"schiena",t:1},{g:"spalle",t:2},{g:"glutei",t:2},{g:"core",t:3}],
-  B:[{g:"gambe",t:1},{g:"schiena",t:1},{g:"petto",t:1},{g:"gambe",t:2},{g:"braccia",t:3},{g:"core",t:3}],
-  C:[{g:"gambe",t:1},{g:"petto",t:1},{g:"schiena",t:1},{g:"spalle",t:2},{g:"braccia",t:3},{g:"core",t:3}],
-};
 // target di volume settimanale (serie) per gruppo — range efficace per ipertrofia
 const VOL_TARGET={gambe:[12,18],petto:[10,16],schiena:[10,16],spalle:[8,12],glutei:[6,12],braccia:[6,10],core:[6,12]};
 function generatePlan(){
@@ -1117,80 +1340,68 @@ function generatePlan(){
   const essential=["gambe","petto","schiena","core"];
   const missing=essential.filter(g=>pool[g].length===0);
   if(missing.length){ toast("Manca attrezzatura per: "+missing.map(g=>GROUPS[g]).join(", ")); return false; }
-  const usedCount={};   // quante volte un esercizio è già stato scelto nella settimana
-  const weekVol={};     // serie settimanali accumulate per gruppo
-  Object.keys(GROUPS).forEach(g=>weekVol[g]=0);
-  // sceglie l'esercizio migliore per un ruolo: tier richiesto, meno usato, e che aiuti a colmare il volume
+  const days=getDays();if(!days.length){toast("Crea prima un giorno");return false;}
+  const usedCount={};
+  const weekVol={};Object.keys(GROUPS).forEach(g=>weekVol[g]=0);
   function pick(group,wantTier){
     let list=pool[group];if(!list.length)return null;
-    // filtra per tier desiderato; se vuoto, allarga
     let cand=list.filter(id=>exTier(id)===wantTier);
     if(!cand.length)cand=list.filter(id=>exTier(id)<=wantTier);
     if(!cand.length)cand=list.slice();
-    // ordina: meno usato prima, poi tier più basso (compound), poi più serie (più volume)
     cand.sort((a,b)=>{
       const ua=usedCount[a]||0,ub=usedCount[b]||0;
       if(ua!==ub)return ua-ub;
       if(exTier(a)!==exTier(b))return exTier(a)-exTier(b);
       return exSetsCount(b)-exSetsCount(a);
     });
-    const chosen=cand[0];
-    usedCount[chosen]=(usedCount[chosen]||0)+1;
-    weekVol[EXERCISES[chosen].g]+=exSetsCount(chosen);
-    return chosen;
+    const chosen=cand[0];usedCount[chosen]=(usedCount[chosen]||0)+1;
+    weekVol[EXERCISES[chosen].g]+=exSetsCount(chosen);return chosen;
   }
+  // template ruotati per dare varietà tra i giorni (full-body ciascuno)
+  const TEMPLATES=[
+    [{g:"gambe",t:1},{g:"petto",t:1},{g:"schiena",t:1},{g:"spalle",t:2},{g:"glutei",t:2},{g:"core",t:3}],
+    [{g:"gambe",t:1},{g:"schiena",t:1},{g:"petto",t:1},{g:"gambe",t:2},{g:"braccia",t:3},{g:"core",t:3}],
+    [{g:"gambe",t:1},{g:"petto",t:1},{g:"schiena",t:1},{g:"spalle",t:2},{g:"braccia",t:3},{g:"core",t:3}],
+  ];
   const d=today();const result={};
-  ["A","B","C"].forEach(day=>{
-    const plan=DAY_PLANS[day];
-    const slots=plan.map(role=>{
-      let g=role.g;
-      if(!pool[g].length){ g=["gambe","petto","schiena","core"].find(x=>pool[x].length); }
-      return pick(g,role.t);
-    }).filter(Boolean);
-    result[day]=slots;
-    WORKOUTS[day].slots=slots;
-    if(d.slots)delete d.slots[day];
-    Object.keys(d.sets||{}).forEach(k=>{if(k.indexOf(day+":")===0)delete d.sets[k];});
+  days.forEach((day,di)=>{
+    const tmpl=TEMPLATES[di%TEMPLATES.length];
+    const slots=tmpl.map(role=>{let g=role.g;if(!pool[g].length)g=essential.find(x=>pool[x].length);return pick(g,role.t);}).filter(Boolean);
+    result[day.id]=slots;day.slots=slots;
+    if(d.slots)delete d.slots[day.id];
+    Object.keys(d.sets||{}).forEach(k=>{if(k.indexOf(day.id+":")===0)delete d.sets[k];});
   });
-  // secondo passaggio: riequilibra il volume dei gruppi principali
-  balanceVolume(result,pool,weekVol,usedCount);
-  // assicura: in ogni giorno l'ordine ottimale — compound principali davanti, accessori, core in fondo
-  // priorità di ordinamento per gruppo (più basso = prima nella sessione)
+  balanceVolume(result,pool,weekVol,usedCount,days);
+  // ordinamento finale per ogni giorno
   const ORDER={gambe:0,petto:1,schiena:2,spalle:3,glutei:4,braccia:5,core:99};
-  ["A","B","C"].forEach(day=>{
-    let s=WORKOUTS[day].slots.slice();
+  days.forEach(day=>{
+    let s=(result[day.id]||day.slots).slice();
     s.sort((a,b)=>{
       const ca=EXERCISES[a].g==="core", cb=EXERCISES[b].g==="core";
-      if(ca!==cb)return ca?1:-1;                 // core sempre in fondo
-      if(ca&&cb)return 0;
-      const ta=exTier(a)===1?0:1, tb=exTier(b)===1?0:1;
-      if(ta!==tb)return ta-tb;                    // compound pesanti davanti
+      if(ca!==cb)return ca?1:-1;if(ca&&cb)return 0;
+      const ta=exTier(a)===1?0:1, tb=exTier(b)===1?0:1;if(ta!==tb)return ta-tb;
       const oa=ORDER[EXERCISES[a].g], ob=ORDER[EXERCISES[b].g];
-      return (oa===undefined?9:oa)-(ob===undefined?9:ob); // poi per ruolo (gambe per prime)
+      return (oa===undefined?9:oa)-(ob===undefined?9:ob);
     });
-    WORKOUTS[day].slots=s;result[day]=s;
+    day.slots=s;result[day.id]=s;
   });
-  DB.genPlan={A:WORKOUTS.A.slots,B:WORKOUTS.B.slots,C:WORKOUTS.C.slots};
-  DB.lastVol=weekVol;
+  DB.workoutDays=days;DB.lastVol=weekVol;
   save();
   return true;
 }
-// riequilibra: se un gruppo principale è sotto il minimo, aumenta sostituendo un isolamento ridondante,
-// ma senza azzerare un gruppo (lascia almeno 1 esercizio di braccia se presente)
-function balanceVolume(result,pool,weekVol,usedCount){
+// riequilibra il volume sostituendo isolamenti braccia ridondanti (mai il core), su tutti i giorni
+function balanceVolume(result,pool,weekVol,usedCount,days){
+  const ids=days.map(d=>d.id);
   ["gambe","petto","schiena","spalle","glutei"].forEach(g=>{
-    const min=VOL_TARGET[g][0];
-    let guard=0;
+    const min=VOL_TARGET[g][0];let guard=0;
     while(weekVol[g]<min && pool[g].length && guard<2){
-      guard++;
-      let done=false;
-      ["B","C","A"].forEach(day=>{
+      guard++;let done=false;
+      ids.slice().reverse().forEach(dayId=>{
         if(done)return;
-        const slots=result[day];
+        const slots=result[dayId];if(!slots)return;
         for(let i=slots.length-1;i>=0;i--){
           const cur=slots[i];
-          // sostituibile: braccia (isolamento) ma solo se ne resta almeno una in settimana, mai il core
-          const armCount=["A","B","C"].reduce((n,dd)=>n+result[dd].filter(x=>EXERCISES[x].g==="braccia").length,0);
+          const armCount=ids.reduce((n,id)=>n+(result[id]||[]).filter(x=>EXERCISES[x].g==="braccia").length,0);
           if(exTier(cur)===3 && EXERCISES[cur].g==="braccia" && armCount>1){
             const cand=pool[g].filter(id=>!slots.includes(id));
             if(cand.length){
@@ -1198,8 +1409,7 @@ function balanceVolume(result,pool,weekVol,usedCount){
               const add=cand[0];
               weekVol[EXERCISES[cur].g]-=exSetsCount(cur);
               slots[i]=add;weekVol[g]+=exSetsCount(add);
-              usedCount[add]=(usedCount[add]||0)+1;
-              WORKOUTS[day].slots=slots;done=true;break;
+              usedCount[add]=(usedCount[add]||0)+1;done=true;break;
             }
           }
         }
@@ -1209,12 +1419,7 @@ function balanceVolume(result,pool,weekVol,usedCount){
   });
 }
 document.getElementById("genPlan").onclick=()=>{
-  if(generatePlan()){
-    renderWorkout();
-    const v=DB.lastVol||{};
-    const summary=Object.keys(GROUPS).filter(g=>v[g]).map(g=>GROUPS[g]+" "+v[g]).join(" · ");
-    toast("Piano generato 💪");
-  }
+  if(generatePlan()){ renderWorkout(); toast("Piano generato 💪"); }
 };
 
 /* ===================== PESO ===================== */
@@ -1300,7 +1505,7 @@ document.getElementById("exportBtn").onclick=()=>{
 document.getElementById("importBtn").onclick=()=>document.getElementById("importFile").click();
 document.getElementById("importFile").onchange=(e)=>{
   const f=e.target.files[0];if(!f)return;const rd=new FileReader();
-  rd.onload=()=>{try{const o=JSON.parse(rd.result);if(o.days&&o.rest){if(!o.hist)o.hist={};if(!o.diet)o.diet={};if(!o.equip)o.equip=["corpo","board","zaino"];if(!o.reminders)o.reminders={water:8,creatine:true};if(!o.custom)o.custom={};DB=o;Object.keys(DB.custom).forEach(id=>{if(!FOODS[id])FOODS[id]=DB.custom[id];});if(DB.genPlan){["A","B","C"].forEach(d=>{if(DB.genPlan[d]&&DB.genPlan[d].length)WORKOUTS[d].slots=DB.genPlan[d];});}save();initFields();goTab("oggi");toast("Backup importato");}else toast("File non valido");}catch(x){toast("File non valido");}};
+  rd.onload=()=>{try{const o=JSON.parse(rd.result);if(o.days&&o.rest){if(!o.hist)o.hist={};if(!o.diet)o.diet={};if(!o.equip)o.equip=["corpo","board","zaino"];if(!o.reminders)o.reminders={water:8,creatine:true};if(!o.custom)o.custom={};if(!o.customEx)o.customEx={};if(!o.exOverride)o.exOverride={};if(!o.energyGoal)o.energyGoal={...ENERGY_GOAL_DEFAULT};DB=o;Object.keys(DB.custom).forEach(id=>{if(!FOODS[id])FOODS[id]=DB.custom[id];});Object.keys(DB.customEx).forEach(id=>{EXERCISES[id]=DB.customEx[id];});if(!DB.workoutDays){DB.workoutDays=["A","B","C"].map(k=>({id:k,name:WORKOUTS[k].label.split(" · ")[1]||k,tip:WORKOUTS[k].tip,slots:(DB.genPlan&&DB.genPlan[k]&&DB.genPlan[k].length)?DB.genPlan[k].slice():WORKOUTS[k].slots.slice()}));}currentDay=(getDays()[0]&&getDays()[0].id)||null;save();initFields();goTab("oggi");toast("Backup importato");}else toast("File non valido");}catch(x){toast("File non valido");}};
   rd.readAsText(f);
 };
 document.getElementById("wipeBtn").onclick=()=>{if(confirm("Cancellare tutti i dati? Irreversibile. Esporta prima un backup.")){localStorage.removeItem(KEY);DB=load();initFields();goTab("oggi");toast("Dati cancellati");}};
@@ -1356,7 +1561,7 @@ function renderDieta(){
   const dd=dietDay();
   const anyEaten=MEAL_ORDER.some(mk=>dd.eaten[mk])||(dd.extraEaten||[]).some(Boolean);
   const plan=dietTotals(dd,false), eaten=dietTotals(dd,true);
-  const show=anyEaten?eaten:plan; const g=ENERGY_GOAL;
+  const show=anyEaten?eaten:plan; const g=energyGoal();
   document.getElementById("dietDayLabel").textContent=anyEaten?"mangiato finora":"piano di oggi";
   document.getElementById("dietKcal").textContent=Math.round(show.kcal);
   document.getElementById("dietKcalGoal").textContent=g.kcal;
@@ -1486,7 +1691,9 @@ function openSwapSheet(ref,ri,isExtra){
 function openQtySheet(ref,ri,isExtra){
   const dd=dietDay();
   const ings=isExtra?dd.extra[ref].ings:dd.meals[ref].ings;
-  const row=ings[ri];const f=FOODS[row.f];const step=f.step||10;
+  const row=ings[ri];const f=FOODS[row.f];
+  // step: 1 per alimenti a unità (pezzi, cucchiai...), 10g per gli alimenti a peso
+  const step=f.unit?1:10;
   const unit=f.unit?(f.unit==="pz"?"pezzi":f.unit):"grammi";
   let html='<div class="qty-edit"><button class="qty-btn" id="qMinus">−</button>'
     +'<div class="qty-val"><span id="qNum" class="num">'+row.q+'</span><span class="qty-unit">'+unit+'</span></div>'
@@ -1593,6 +1800,36 @@ document.getElementById("rerollDiet").onclick=()=>{
 document.getElementById("resetDiet").onclick=()=>{
   const dd=dietDay();MEAL_ORDER.forEach(mk=>dd.eaten[mk]=false);(dd.extraEaten||[]).forEach((_,i)=>dd.extraEaten[i]=false);save();renderDieta();toast("Spunte azzerate");
 };
+document.getElementById("editGoal").onclick=()=>{
+  const g=energyGoal();
+  const html='<div class="cf-form">'
+    +'<div style="font-size:13px;color:var(--muted);padding:2px 0;">Imposta le calorie giornaliere. Proteine, carboidrati e grassi si ricalcolano automaticamente mantenendo le proporzioni.</div>'
+    +'<input id="goalKcal" type="number" inputmode="numeric" value="'+g.kcal+'" placeholder="Calorie / giorno">'
+    +'<div class="qty-edit" style="padding:8px 0;"><button class="qty-btn" id="gkMinus">−</button>'
+    +'<div class="qty-val"><span id="gkNum" class="num">'+g.kcal+'</span><span class="qty-unit">kcal</span></div>'
+    +'<button class="qty-btn" id="gkPlus">+</button></div>'
+    +'<div class="cf-kcal" id="gkMacros"></div>'
+    +'<button class="btn" id="gkSave" style="width:100%;padding:13px;">Salva obiettivo</button></div>';
+  showSheet("Calorie obiettivo",html);
+  let val=g.kcal;
+  // proporzioni attuali dei macro (default 20/50/30 se incoerenti)
+  const totKcal=g.p*4+g.c*4+g.g*9;
+  let rP=totKcal?(g.p*4)/totKcal:0.2, rC=totKcal?(g.c*4)/totKcal:0.5, rG=totKcal?(g.g*9)/totKcal:0.3;
+  function upd(){
+    document.getElementById("gkNum").textContent=val;
+    document.getElementById("goalKcal").value=val;
+    const p=Math.round(val*rP/4),c=Math.round(val*rC/4),gr=Math.round(val*rG/9);
+    document.getElementById("gkMacros").innerHTML='Macro stimati: <b>P '+p+'g · C '+c+'g · G '+gr+'g</b>';
+  }
+  upd();
+  document.getElementById("gkMinus").onclick=()=>{val=Math.max(1200,val-50);upd();};
+  document.getElementById("gkPlus").onclick=()=>{val=val+50;upd();};
+  document.getElementById("goalKcal").oninput=()=>{val=Math.max(1200,Math.min(6000,+document.getElementById("goalKcal").value||val));upd();};
+  document.getElementById("gkSave").onclick=()=>{
+    DB.energyGoal={kcal:val, p:Math.round(val*rP/4), c:Math.round(val*rC/4), g:Math.round(val*rG/9)};
+    save();closeSheet();renderDieta();toast("Obiettivo aggiornato");
+  };
+};
 /* ===================== NAV ===================== */
 const TABS=[
   {id:"oggi",label:"Oggi",icon:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'},
@@ -1624,8 +1861,8 @@ function setHeader(){
   const d=new Date();const g=["Domenica","Lunedì","Martedì","Mercoledì","Giovedì","Venerdì","Sabato"];
   const m=["gen","feb","mar","apr","mag","giu","lug","ago","set","ott","nov","dic"];
   document.getElementById("dateLabel").textContent=d.getDate()+" "+m[d.getMonth()];
-  const key=DAY_MAP[d.getDay()];
-  document.getElementById("headerMain").innerHTML=g[d.getDay()]+" — "+(key?"Giorno <span class='lime'>"+key+"</span>":"<span class='lime'>Riposo</span>");
+  const dayId=todaysDayId();const day=dayId?getDay(dayId):null;
+  document.getElementById("headerMain").innerHTML=g[d.getDay()]+" — "+(day?"<span class='lime'>"+day.name+"</span>":"<span class='lime'>Riposo</span>");
 }
 
 buildTabs();setHeader();initFields();renderOggi();
