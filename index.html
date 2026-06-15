@@ -245,6 +245,27 @@
     border-bottom:1px solid var(--line);cursor:pointer;}
   .ex-swap-bar>span:first-child{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--faint);font-weight:700;}
   .ex-swap-act{font-size:12px;font-weight:700;color:var(--accent-dim);}
+  /* riscaldamento */
+  .wu-block{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);margin-bottom:14px;overflow:hidden;}
+  .wu-hd{padding:14px 16px;display:flex;align-items:center;gap:11px;cursor:pointer;}
+  .wu-hd .wu-ico{font-size:20px;}
+  .wu-hd .wu-t{flex:1;font-size:15px;font-weight:700;}
+  .wu-hd .wu-meta{font-size:12px;color:var(--faint);}
+  .wu-hd .wu-toggle{color:var(--faint);font-size:22px;transition:transform .25s;line-height:1;}
+  .wu-block.open .wu-toggle{transform:rotate(45deg);}
+  .wu-body{max-height:0;overflow:hidden;transition:max-height .35s ease;}
+  .wu-block.open .wu-body{max-height:900px;}
+  .wu-item{display:flex;align-items:flex-start;gap:11px;padding:11px 16px;border-top:1px solid var(--line);}
+  .wu-check{width:24px;height:24px;border-radius:7px;border:2px solid var(--line);flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:1px;cursor:pointer;transition:all .15s;}
+  .wu-check.on{background:var(--rest);border-color:var(--rest);}
+  .wu-check svg{width:13px;height:13px;stroke:transparent;stroke-width:3.5;fill:none;}
+  .wu-check.on svg{stroke:#fff;}
+  .wu-info{flex:1;}
+  .wu-name{font-size:14px;font-weight:600;}
+  .wu-name.done{color:var(--faint);text-decoration:line-through;}
+  .wu-dur{color:var(--rest);font-weight:700;font-size:12.5px;margin-left:6px;}
+  .wu-note{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.45;}
+  .wu-wrist{font-size:9.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--warn);font-weight:700;margin-left:6px;}
   /* reminder card */
   .rem-row{display:flex;align-items:center;gap:13px;padding:13px 0;border-bottom:1px solid var(--line);}
   .rem-row:last-child{border-bottom:none;}
@@ -497,7 +518,21 @@ const EXERCISES={
   hollow:{n:"Hollow hold", g:"core", equip:["corpo"], sets:3, rep:"20-40s", note:"Schiena a terra aderente, gambe e spalle sollevate."},
   crunch:{n:"Crunch", g:"core", equip:["corpo"], sets:3, rep:"15-20", note:"Solleva le scapole contraendo gli addominali, senza tirare il collo."},
 };
-// schede: ogni slot referenzia un esercizio; il gruppo determina le alternative per lo swap
+/* ===================== CATALOGO RISCALDAMENTO =====================
+   Movimenti di attivazione/mobilità leggeri, mappati ai gruppi muscolari che preparano.
+   "for": gruppi per cui è utile. "wrist:true" = mobilità polsi (prima di ogni spinta a terra,
+   importante per la tua storia: capitato, radio, mignolo). dur = durata/ripetizioni indicative. */
+const WARMUPS={
+  generale:{n:"Attivazione generale", dur:"2-3 min", for:["__always"], note:"Marcia sul posto + circonduzioni di braccia, finché non senti il corpo più caldo. Alza la temperatura prima di tutto."},
+  polsi:{n:"Mobilità polsi", dur:"1 min", wrist:true, for:["petto","spalle","braccia"], note:"In ginocchio, palmi a terra, sposta il peso avanti/indietro e ai lati lentamente. Poi rotazioni dei polsi. Essenziale prima di ogni spinta, dati i tuoi trascorsi al polso."},
+  anche:{n:"Mobilità anche e caviglie", dur:"1-2 min", for:["gambe","glutei"], note:"Affondi profondi lenti senza peso + slanci gamba avanti/indietro e laterali. Prepara anche e ginocchia allo squat."},
+  squat_corpo_wu:{n:"Squat a corpo libero (attivazione)", dur:"2×10", for:["gambe","glutei"], note:"Lenti e profondi, senza peso. Scaldano i quadricipiti e ripassano lo schema motorio dello squat."},
+  spalle_circ:{n:"Circonduzioni e scapole", dur:"1-2 min", for:["spalle","petto","schiena"], note:"Circonduzioni delle spalle avanti e indietro + retrazioni scapolari. Prepara la cuffia dei rotatori alle spinte e alle tirate."},
+  pushup_facili:{n:"Push-up facili di rodaggio", dur:"1×8-10", for:["petto","braccia"], note:"Sulle ginocchia o sulla board con presa neutra, lenti. Attivano petto e tricipiti senza arrivare a cedimento."},
+  dorsali_wu:{n:"Attivazione dorsali", dur:"1×12", for:["schiena"], note:"Da in piedi, tira i gomiti indietro stringendo le scapole (come un rematore a vuoto) o rematore leggerissimo con lo zaino. Risveglia la schiena."},
+  core_wu:{n:"Attivazione core", dur:"2×20s", for:["core","gambe"], note:"Plank breve + ponte glutei lento. Accende il core che stabilizza squat e spinte."},
+  glutei_wu:{n:"Attivazione glutei", dur:"1×15", for:["glutei","gambe"], note:"Ponte glutei lento a terra, stringendo in alto 1 secondo. Risveglia i glutei prima di squat e hip thrust."},
+};
 const WORKOUTS = {
   A:{label:"Lun · A", tip:"<b>Full-body A.</b> Usa sempre le maniglie della board (presa neutra) per i polsi. Lo squat è il movimento che costruisce più massa: dagli il meglio.",
     slots:["squat_zaino","pushup_board_petto","affondi_zaino","pike","hipthrust_zaino","plank"]},
@@ -702,6 +737,30 @@ function daySlots(dayKey){
   }
   return d.slots[dayKey];
 }
+// riscaldamento specifico per il giorno: in base ai gruppi degli esercizi in scheda
+function warmupForDay(dayKey){
+  const slots=daySlots(dayKey);
+  const groups=new Set(slots.map(id=>EXERCISES[id]?EXERCISES[id].g:null).filter(Boolean));
+  const needsWrist=slots.some(id=>{const e=EXERCISES[id];return e&&(e.g==="petto"||e.g==="braccia"||(e.g==="spalle"&&e.equip.includes("board")))||(e&&e.equip&&e.equip.includes("board"));});
+  const picked=[];
+  // 1. sempre il generale per primo
+  picked.push("generale");
+  // 2. mobilità polsi se c'è qualsiasi spinta a terra/board (priorità per la tua storia ai polsi)
+  if(needsWrist)picked.push("polsi");
+  // 3. per ogni gruppo presente (in ordine di importanza), aggiungi i movimenti pertinenti
+  //    gruppi principali prima degli accessori, così il riscaldamento dei fondamentali non viene tagliato
+  const order=["gambe","petto","schiena","spalle","glutei","core"];
+  order.forEach(g=>{
+    if(!groups.has(g))return;
+    Object.keys(WARMUPS).forEach(wid=>{
+      const w=WARMUPS[wid];
+      if(wid==="generale"||wid==="polsi")return;
+      if(w.for.includes(g)&&!picked.includes(wid))picked.push(wid);
+    });
+  });
+  // limite sensato (max 7 movimenti) mantenendo i primi (più importanti)
+  return picked.slice(0,7);
+}
 // sets per slot del giorno; chiave include data+scheda+slot
 function exSets(dayKey,slotIdx){
   const d=today();const id=dayKey+":"+slotIdx;
@@ -856,12 +915,45 @@ function exRing(done,total){
   return '<svg width="30" height="30" viewBox="0 0 30 30"><circle cx="15" cy="15" r="'+r+'" fill="none" stroke="var(--surface2)" stroke-width="3"/>'
     +'<circle cx="15" cy="15" r="'+r+'" fill="none" stroke="'+(done===total&&total?"var(--good)":"var(--accent)")+'" stroke-width="3" stroke-linecap="round" stroke-dasharray="'+c.toFixed(1)+'" stroke-dashoffset="'+(c*(1-pct)).toFixed(1)+'"/></svg>';
 }
+function renderWarmup(list){
+  const wu=warmupForDay(currentDay);
+  if(!wu.length)return;
+  const d=today();
+  if(!d.wu)d.wu={};
+  if(!d.wu[currentDay])d.wu[currentDay]={};
+  const state=d.wu[currentDay];
+  const doneCount=wu.filter(id=>state[id]).length;
+  const block=document.createElement("div");
+  block.className="wu-block"+(doneCount===wu.length?" open":"");
+  let html='<div class="wu-hd"><span class="wu-ico">🔥</span>'
+    +'<div class="wu-t">Riscaldamento <span class="wu-meta">· '+doneCount+'/'+wu.length+' · ~5-8 min</span></div>'
+    +'<div class="wu-toggle">+</div></div>'
+    +'<div class="wu-body">';
+  wu.forEach(id=>{
+    const w=WARMUPS[id];const on=state[id];
+    html+='<div class="wu-item"><div class="wu-check'+(on?" on":"")+'" data-wu="'+id+'"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>'
+      +'<div class="wu-info"><div class="wu-name'+(on?" done":"")+'">'+w.n+'<span class="wu-dur">'+w.dur+'</span>'+(w.wrist?'<span class="wu-wrist">⚠ polsi</span>':'')+'</div>'
+      +'<div class="wu-note">'+w.note+'</div></div></div>';
+  });
+  html+='</div>';
+  block.innerHTML=html;
+  // toggle apri/chiudi
+  block.querySelector(".wu-hd").onclick=(ev)=>{if(ev.target.closest(".wu-check"))return;block.classList.toggle("open");};
+  // spunte
+  block.querySelectorAll(".wu-check").forEach(c=>{
+    c.onclick=(ev)=>{ev.stopPropagation();const id=c.dataset.wu;state[id]=!state[id];save();renderWorkout();
+      // mantieni aperto
+      const b=document.querySelector(".wu-block");if(b)b.classList.add("open");};
+  });
+  list.appendChild(block);
+}
 function renderWorkout(){
   renderDayTabs();
   const w=WORKOUTS[currentDay];
   document.getElementById("dayTip").innerHTML=w.tip;
   const slots=daySlots(currentDay);
   const list=document.getElementById("exerciseList");list.innerHTML="";
+  renderWarmup(list);
   slots.forEach((exId,i)=>{
     const e=EXERCISES[exId]||{n:"?",sets:3,rep:"",note:"",g:"",heavy:false};
     const setKey=currentDay+":"+i;            // chiave serie del giorno
@@ -986,6 +1078,7 @@ function strengthSpark(id){
 document.getElementById("resetWorkout").onclick=()=>{
   const d=today();
   daySlots(currentDay).forEach((exId,i)=>{delete d.sets[currentDay+":"+i];});
+  if(d.wu&&d.wu[currentDay])d.wu[currentDay]={};
   save();renderWorkout();toast("Sessione azzerata");
 };
 // ---- GENERATORE PIANO A/B/C ----
